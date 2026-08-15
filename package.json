@@ -1,0 +1,39 @@
+{
+  "name": "gaia-be",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
+    "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "account:create": "ts-node -r tsconfig-paths/register scripts/create-account.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.1",
+    "bcryptjs": "^3.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^24.13.3",
+    "@types/pg": "^8.11.10",
+    "eslint": "^10.8.0",
+    "globals": "^17.7.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.65.0"
+  }
+}
