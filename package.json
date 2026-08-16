@@ -9,6 +9,7 @@
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "db:seed:init": "ts-node -r tsconfig-paths/register scripts/seed-init-data.ts",
     "account:create": "ts-node -r tsconfig-paths/register scripts/create-account.ts"
   },
   "dependencies": {

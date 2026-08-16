@@ -43,6 +43,24 @@ export class AuthService {
     return this.toPublicUser(user)
   }
 
+  async getCurrentUserFromAuthorization(authorization?: string) {
+    const token = this.extractBearerToken(authorization)
+
+    if (!token) {
+      throw new UnauthorizedException('Missing bearer token')
+    }
+
+    const payload = await this.jwtService.verifyAsync<{ sub: string }>(token)
+
+    return this.getCurrentUser(payload.sub)
+  }
+
+  private extractBearerToken(authorization?: string): string | null {
+    const [scheme, token] = authorization?.split(' ') ?? []
+
+    return scheme?.toLowerCase() === 'bearer' && token ? token : null
+  }
+
   private toPublicUser(user: UserRow): PublicUser {
     return {
       id: user.id,

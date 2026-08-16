@@ -11,6 +11,15 @@ services:
       PORT: 3001
     ports:
       - "${API_PORT:-3001}:3001"
+    command: sh scripts/docker-dev-watch.sh
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./migrations:/app/migrations
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
     depends_on:
       postgres:
         condition: service_healthy

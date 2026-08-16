@@ -1,0 +1,337 @@
+{
+  "actionLabel": "New research request",
+  "activeDocumentTestId": "d-08-research-document",
+  "approvalNotice": {
+    "message": "This note cannot be used by Atlas until approved",
+    "testId": "gaia-06-approval-notice",
+    "title": "Draft — Gaia · not approved"
+  },
+  "assistant": {
+    "inputPlaceholder": "Ask Gaia to research, or update a section",
+    "messages": [
+      {
+        "author": "Gaia",
+        "body": "Hi Nimali — I can research topics, find related papers, and propose updates to draft sections. Approved notes are locked: there I can only suggest, never change.",
+        "tone": "assistant"
+      },
+      {
+        "author": "Nimali · RA",
+        "body": "Update the summary — mention the EFRAG sector guidance published last week.",
+        "tone": "user"
+      },
+      {
+        "author": "Gaia",
+        "body": "Found it — EFRAG published draft sector standards on 28 Jul 2026. Proposed addition:",
+        "draft": {
+          "body": "Sector-specific ESRS standards are expected to phase in from 2027, further widening reporting scope for Wave 2 companies ",
+          "citation": "7",
+          "title": "Summary"
+        },
+        "tone": "assistant"
+      }
+    ],
+    "suggestions": [
+      "Find related papers",
+      "Scan regulations",
+      "Competitor scan",
+      "Summarize a source"
+    ],
+    "testId": "gaia-14-assistant-panel",
+    "title": "Gaia Assistant"
+  },
+  "documentBody": {
+    "openQuestions": {
+      "footer": "Manual text edit · saved as human edit in the audit trail",
+      "modeLabel": "Editing as text",
+      "questions": [
+        "Do we target Wave 2 companies directly, or their SME suppliers who feed them data?",
+        "Which member state's transposition should the MVP assume first?",
+        "Should pricing reflect assurance-readiness as a premium tier?"
+      ],
+      "testId": "gaia-11-open-questions-editor",
+      "title": "Open questions for the BA",
+      "toolbar": {
+        "auditLabel": "Edits are audit-logged",
+        "testId": "gaia-17-editing-toolbar"
+      }
+    },
+    "sections": [
+      {
+        "paragraphs": [
+          [
+            { "text": "The " },
+            { "text": "EU Corporate Sustainability Reporting Directive (CSRD)" },
+            { "text": " enters its second wave in 2026, extending mandatory ESRS-aligned reporting to large non-listed companies " },
+            { "citation": "1", "text": "" },
+            { "text": ". Scope 3 supplier emissions disclosure moves from \"comply or explain\" to mandatory quantitative reporting for most in-scope companies " },
+            { "citation": "2", "text": "" },
+            { "text": ", which directly increases demand for supplier data collection tooling like EcoTrace " },
+            { "citation": "4", "text": "" },
+            { "text": "." }
+          ]
+        ],
+        "testId": "gaia-08-summary-section",
+        "title": "Summary"
+      },
+      {
+        "bullets": [
+          [
+            { "text": "Wave 2 applies to companies with 250+ employees or €50M+ turnover — an estimated 49,000 companies across the EU " },
+            { "citation": "1", "text": "" },
+            { "text": "." }
+          ],
+          [
+            { "text": "Scope 3 category 1 (purchased goods & services) is the largest reporting gap; 68% of surveyed companies lack supplier-level data " },
+            { "citation": "2", "text": "" },
+            { "citation": "3", "text": "" },
+            { "text": "." }
+          ],
+          [
+            { "text": "Digital tagging (XBRL) of sustainability statements becomes mandatory, favoring products with structured data export " },
+            { "citation": "5", "text": "" },
+            { "text": "." }
+          ],
+          [
+            { "text": "Member-state transposition still varies; Germany and France add stricter assurance requirements " },
+            { "citation": "6", "text": "" },
+            { "text": "." }
+          ]
+        ],
+        "testId": "gaia-09-key-findings-section",
+        "title": "Key findings"
+      },
+      {
+        "bullets": [
+          [
+            { "text": "Opportunity: " },
+            { "text": "supplier emissions intake (REQ-031 candidate) matches the largest compliance gap " },
+            { "citation": "2", "text": "" },
+            { "text": "." }
+          ],
+          [
+            { "text": "Risk: " },
+            { "text": "assurance requirements may demand audit-grade data lineage — affects architecture early." }
+          ]
+        ],
+        "testId": "gaia-10-risks-opportunities-section",
+        "title": "Risks & opportunities"
+      }
+    ]
+  },
+  "documentDetail": {
+    "description": "Part of EU CSRD compliance impact research · requested by Nimali (RA) · drafted by Gaia yesterday 16:42 · run #482",
+    "status": { "label": "Needs review", "variant": "review" },
+    "testId": "gaia-07-research-document-header",
+    "title": "EU CSRD reporting rules — 2026 update",
+    "topic": "Regulation"
+  },
+  "filters": [
+    {
+      "label": "Topic",
+      "options": [
+        { "label": "All", "value": "all" },
+        { "label": "Sustainability", "value": "sustainability" },
+        { "label": "Regulation", "value": "regulation" },
+        { "label": "Competitors", "value": "competitors" }
+      ],
+      "testId": "topic-filter-dropdown"
+    },
+    {
+      "label": "Type",
+      "options": [
+        { "label": "All", "value": "all" },
+        { "label": "Summary", "value": "summary" },
+        { "label": "Draft", "value": "draft" },
+        { "label": "Request", "value": "request" }
+      ],
+      "testId": "type-filter-dropdown"
+    },
+    {
+      "label": "Status",
+      "options": [
+        { "label": "All", "value": "all" },
+        { "label": "Draft", "value": "draft" },
+        { "label": "Pending approval", "value": "pending-approval" },
+        { "label": "Published", "value": "published" }
+      ],
+      "testId": "status-filter-dropdown"
+    }
+  ],
+  "knowledgeBase": {
+    "entries": [
+      {
+        "meta": "Paper · kept today · cited by compliance impact research",
+        "testId": "knowledge-base-supplier-network-review",
+        "title": "Scope 3 data quality in supplier networks"
+      },
+      {
+        "meta": "Report · kept last week · cited by compliance impact research",
+        "testId": "knowledge-base-cdp-supply-chain-report",
+        "title": "CDP Supply Chain Report 2025"
+      },
+      {
+        "meta": "Internal doc · approved · always in context",
+        "testId": "knowledge-base-ecotrace-product-brief",
+        "title": "EcoTrace product brief v0.3"
+      }
+    ],
+    "footer": "Kept items are indexed and retrieved as company context for future Gaia research runs (RAG).",
+    "itemCountLabel": "8 items",
+    "testId": "gaia-16-knowledge-base-panel",
+    "title": "Knowledge base"
+  },
+  "relatedPapers": {
+    "papers": [
+      {
+        "actionLabel": "Kept",
+        "detail": "Matches finding on supplier-level data gaps",
+        "isKept": true,
+        "meta": "Müller et al. · J. of Industrial Ecology · 2026",
+        "testId": "related-paper-supplier-network-review",
+        "title": "Scope 3 data quality in supplier networks: a systematic review"
+      },
+      {
+        "actionLabel": "Keep",
+        "detail": "Supports risk on audit-grade data lineage",
+        "meta": "Van Dijk & Rossi · ECGI working paper · 2025",
+        "testId": "related-paper-csrd-assurance-readiness",
+        "title": "CSRD assurance readiness among EU mid-caps"
+      },
+      {
+        "actionLabel": "Keep",
+        "detail": "Relevant to digital tagging finding",
+        "meta": "Okafor et al. · Accounting & Society · 2026",
+        "testId": "related-paper-xbrl-tagging-costs",
+        "title": "XBRL tagging of sustainability statements: early adopter costs"
+      }
+    ],
+    "sourceLabel": "via Find related papers",
+    "testId": "gaia-15-related-papers-panel",
+    "title": "Related papers"
+  },
+  "researchPanel": {
+    "documentsLabel": "9 documents",
+    "researchLabel": "4 research",
+    "sections": [
+      {
+        "documentSummary": "3 docs",
+        "documents": [
+          {
+            "meta": "Gaia draft · 6 sources · yesterday",
+            "status": { "label": "Needs review", "variant": "review" },
+            "testId": "d-08-research-document",
+            "title": "EU CSRD reporting rules — 2026 update",
+            "topic": "Regulation"
+          },
+          {
+            "meta": "Requested 2h ago by Nimali",
+            "status": { "label": "Queued", "variant": "queued" },
+            "testId": "d-07-research-document",
+            "title": "Member-state transposition matrix",
+            "topic": "Analysis"
+          },
+          {
+            "meta": "Approved 2d ago",
+            "status": { "label": "Approved", "variant": "approved" },
+            "testId": "d-06-research-document",
+            "title": "Compliance officer interviews — 5 companies",
+            "topic": "Interview notes"
+          }
+        ],
+        "isExpanded": true,
+        "testId": "rs-04-research-section",
+        "title": "EU CSRD compliance impact"
+      },
+      {
+        "documentSummary": "2 docs",
+        "documents": [
+          {
+            "detail": "→ Used in REQ-031",
+            "meta": "Approved 3d ago ·",
+            "status": { "label": "Approved", "variant": "approved" },
+            "testId": "d-05-research-document",
+            "title": "Supplier data collection pain points",
+            "topic": "Customer problem"
+          },
+          {
+            "meta": "Approved last week",
+            "status": { "label": "Approved", "variant": "approved" },
+            "testId": "d-04-research-document",
+            "title": "Competitor scan: Persefoni, Watershed, Sweep",
+            "topic": "Competitor"
+          }
+        ],
+        "isExpanded": true,
+        "testId": "rs-03-research-section",
+        "title": "Supplier emissions data collection"
+      },
+      {
+        "documentSummary": "3 docs",
+        "documents": [],
+        "testId": "rs-02-research-section",
+        "title": "Carbon accounting market"
+      },
+      {
+        "documentSummary": "1 doc · ✕ rejected",
+        "documents": [],
+        "testId": "rs-01-research-section",
+        "title": "SME sustainability budgets"
+      }
+    ],
+    "testId": "gaia-05-research-collection-panel",
+    "title": "Research"
+  },
+  "secondaryTestId": "gaia-04-header-secondary-marker",
+  "sourceVerification": {
+    "sources": [
+      {
+        "accessedLabel": "accessed yesterday",
+        "isVerified": true,
+        "sourceLabel": "ec.europa.eu",
+        "testId": "source-eu-commission-csrd-timeline",
+        "title": "EU Commission — CSRD implementation timeline"
+      },
+      {
+        "accessedLabel": "accessed yesterday",
+        "isVerified": true,
+        "sourceLabel": "efrag.org",
+        "testId": "source-efrag-esrs-requirements",
+        "title": "EFRAG — ESRS E1 & Scope 3 disclosure requirements"
+      },
+      {
+        "accessedLabel": "accessed yesterday",
+        "isVerified": true,
+        "sourceLabel": "cdp.net",
+        "testId": "source-cdp-supply-chain-report",
+        "title": "CDP Supply Chain Report 2025 — supplier data gaps"
+      },
+      {
+        "accessedLabel": "approved document",
+        "isVerified": true,
+        "sourceLabel": "Moderta docs",
+        "testId": "source-internal-ecotrace-product-brief",
+        "title": "Internal — EcoTrace product brief v0.3"
+      },
+      {
+        "accessedLabel": "accessed yesterday",
+        "isVerified": false,
+        "sourceLabel": "esma.europa.eu",
+        "testId": "source-esma-digital-tagging-standard",
+        "title": "ESMA — digital tagging (XBRL) technical standard"
+      },
+      {
+        "accessedLabel": "accessed yesterday",
+        "isVerified": false,
+        "sourceLabel": "deloitte.com",
+        "testId": "source-deloitte-transposition-tracker",
+        "title": "Deloitte — member state transposition tracker"
+      }
+    ],
+    "statusLabel": "4/6 verified",
+    "testId": "gaia-12-source-verification-panel",
+    "title": "Sources — verify each before approval"
+  },
+  "subtitle": "Sustainability research, regulation and competitor summaries · drafts stay unpublished until RA approval",
+  "testId": "gaia-03-research-library-header",
+  "title": "Gaia — Research Library"
+}
