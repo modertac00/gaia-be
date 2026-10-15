@@ -1,0 +1,39 @@
+{
+  "extraKnownMarketplaces": {
+    "context7": {
+      "source": {
+        "source": "github",
+        "repo": "upstash/context7"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "context7@context7": true
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }] }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+      }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }] }
+    ]
+  }
+}
