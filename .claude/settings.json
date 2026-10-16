@@ -1,4 +1,27 @@
 {
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(../esm-common-modules/.env)",
+      "Read(../esm-common-modules/.env.*)"
+    ],
+    "additionalDirectories": [
+      "../esm-common-modules"
+    ]
+  },
   "extraKnownMarketplaces": {
     "context7": {
       "source": {
@@ -12,28 +35,57 @@
   },
   "hooks": {
     "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\""
+          }
+        ]
+      }
     ],
     "PreToolUse": [
       {
         "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\""
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
       {
         "matcher": "Task|Agent|Skill|SlashCommand|Read|mcp__.*",
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\""
+          }
+        ]
       }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\"" }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/trace.cjs\""
+          }
+        ]
+      }
     ]
   }
 }
