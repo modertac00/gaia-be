@@ -37,12 +37,17 @@ Always return the full resource contract (not partial `{ id, status }` objects) 
 Single envelope produced by the global exception filter:
 
 ```json
-{ "statusCode": 400, "message": "Validation failed", "errors": [{ "field": "title", "message": "...", "code": "too_small" }] }
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": { "title": ["Too small: expected string to have >=1 characters"], "author": { "name": ["Required"] } }
+}
 ```
 
-`errors` is present only for validation failures (shape produced by `ZodValidationPipe`). Use 400 validation, 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch.
+`errors` is present only for validation failures (shape produced by `ZodValidationPipe`). It is an object mirroring the request body/query: keys are the same field names the client sent, nested objects for nested fields, and each invalid field maps to a `string[]` of its messages. A failure with no field path is reported under `body`. Use 400 validation, 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch.
 
 ## Swagger
 
-- `@ApiTags('<feature>')` per controller; `@ApiOperation`, `@ApiOkResponse`/`@ApiCreatedResponse` per handler; `@ApiBearerAuth()` unless `@Public()`.
+- Swagger metadata lives in `<feature>.swagger.ts` next to the controller, never inline. Export one composed decorator per handler (`applyDecorators(ApiOperation, ApiOkResponse/ApiCreatedResponse, ...)`, e.g. `ApiListResearch()`) and one class-level decorator (`ApiResearchController()`) that applies `@ApiTags('<feature>')` and `@ApiBearerAuth()` (omitted for `@Public()` controllers).
+- The controller shows only routing, pipes and delegation: one composed Swagger decorator per handler, no raw `@Api*` decorators.
 - Generate schema docs from the Zod contracts (e.g. `zod` → JSON schema helper) instead of duplicating DTO classes for Swagger.

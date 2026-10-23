@@ -2,10 +2,29 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common'
 import type { ZodType } from 'zod'
 
-export interface ValidationErrorItem {
-  field: string
-  message: string
-  code: string
+/** Mirrors the request shape: a field maps to its messages, a nested object to its own errors. */
+export interface ValidationErrors {
+  [field: string]: string[] | ValidationErrors
+}
+
+const isMessages = (node: string[] | ValidationErrors): node is string[] => Array.isArray(node)
+
+function toValidationErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): ValidationErrors {
+  const errors: ValidationErrors = {}
+  for (const issue of issues) {
+    const path = issue.path.length ? issue.path.map(String) : ['body']
+    let node = errors
+    for (const key of path.slice(0, -1)) {
+      const next = node[key]
+      if (next === undefined || isMessages(next)) node[key] = {} // a nested error replaces a leaf on the same key
+      node = node[key] as ValidationErrors
+    }
+    const leaf = path.at(-1) as string
+    const existing = node[leaf]
+    if (existing === undefined) node[leaf] = [issue.message]
+    else if (isMessages(existing)) existing.push(issue.message)
+  }
+  return errors
 }
 
 @Injectable()
@@ -18,13 +37,7 @@ export class ZodValidationPipe<TOutput = unknown> implements PipeTransform<unkno
     if (!result.success) {
       throw new BadRequestException({
         message: 'Validation failed',
-        errors: result.error.issues.map(
-          (issue): ValidationErrorItem => ({
-            field: issue.path.length ? issue.path.join('.') : 'body',
-            message: issue.message,
-            code: issue.code,
-          }),
-        ),
+        errors: toValidationErrors(result.error.issues),
       })
     }
 

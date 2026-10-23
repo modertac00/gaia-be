@@ -6,7 +6,7 @@ The org's contract layer is `@moderta/api-contracts`, repo `../esm-common-module
 
 - Domain enum-like lists and their unions (`RESEARCH_TYPES`, `ResearchType`).
 - Zod schemas for every request body, query and path param set, and the inferred types.
-- Response shapes (Zod schema + inferred type) that a client consumes.
+- Response shapes that a client consumes.
 - Shared pagination/query building blocks (`cursorPageQuerySchema`, `cursorPageSchema(item)`).
 - Validation limits (`GAIA_LIMITS.TITLE_MAX`) and user-facing message constants.
 - Anything a frontend (gaia-fe) or a second backend also needs.

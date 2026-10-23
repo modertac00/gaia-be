@@ -19,7 +19,7 @@ Placeholders in `templates/` (also used by `nestjs-testing`): `__Feature__` (Pas
 6. **Repository implementation.** `templates/repositories/sequelize-feature.repository.ts`. Only file importing the model/`Op`.
 7. **Mapper.** `templates/feature.mapper.ts`: record → contract response.
 8. **Service.** `templates/feature.service.ts`: business rules, 404 via contract message constants, transactions via `TRANSACTION_RUNNER` for multi-write use cases.
-9. **Controller.** `templates/feature.controller.ts`: thin; `ZodValidationPipe` + contract schemas; `@CurrentUser()`; Swagger decorators.
+9. **Controller.** `templates/feature.controller.ts`: thin; `ZodValidationPipe` + contract schemas; `@CurrentUser()`; composed Swagger decorators imported from the feature's swagger file. Also create `templates/feature.swagger.ts` → `<feature>.swagger.ts` (all `@Api*` metadata lives there, not in the controller).
 10. **Module.** `templates/feature.module.ts`: bind token with `useClass`, export the service only if another module needs it, register in `AppModule`.
 11. **Tests.** Use the `nestjs-testing` skill (service unit + controller + e2e matrix).
 12. **Verify.** `npm run lint && npm run build` (+ `npm test`, `npm run test:e2e` when present). Then run the `backend-review` skill on the diff and fix blockers.

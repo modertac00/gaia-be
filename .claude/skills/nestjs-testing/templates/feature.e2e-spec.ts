@@ -33,10 +33,10 @@ describe('__route__ (e2e)', () => {
     expect(() => __featureCamel__Schema.parse(res.body)).not.toThrow()
   })
 
-  it('rejects invalid payloads (400 with errors[])', async () => {
+  it('rejects invalid payloads (400 with errors keyed by field)', async () => {
     const res = await request(server()).post('/__route__').auth(ownerToken, { type: 'bearer' }).send({})
     expect(res.status).toBe(400)
-    expect(res.body.errors).toEqual(expect.any(Array))
+    expect(res.body.errors).toEqual({ title: expect.any(Array) })
   })
 
   it('requires authentication (401)', async () => {

@@ -5,7 +5,7 @@ import { InvalidCursorError } from '../database/cursor-pagination'
 interface ErrorBody {
   statusCode: number
   message: string
-  errors?: unknown[]
+  errors?: Record<string, unknown>
 }
 
 @Catch()
@@ -29,7 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const statusCode = exception.getStatus()
     const payload = exception.getResponse()
     if (typeof payload === 'string') return { statusCode, message: payload }
-    const { message, errors } = payload as { message?: string | string[]; errors?: unknown[] }
+    const { message, errors } = payload as { message?: string | string[]; errors?: Record<string, unknown> }
     return {
       statusCode,
       message: Array.isArray(message) ? message.join(', ') : (message ?? exception.message),
