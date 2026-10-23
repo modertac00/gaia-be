@@ -8,7 +8,7 @@ Use the `contracts-steward` agent to add or extend the Gaia contract: **$ARGUMEN
 Requirements:
 - Search for existing equivalents first and reuse or extend them.
 - Follow `.ai/instructions/contracts-rules.md`.
-- Build `../esm-common-modules` and bump its version.
+- Build `../esm-common-modules`. Recommend the version bump but do not edit the version or publish; a person does both.
 
 Then report back:
 - the exported symbols;

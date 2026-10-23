@@ -43,7 +43,7 @@ Rules of thumb:
 ```bash
 cd ../esm-common-modules && npm run build
 ```
-Then bump `version` in its `package.json` (patch additive / minor breaking while 0.x). Do not publish; publishing is a GitHub release. Tell the user the new version and that gaia-be needs `@moderta/api-contracts@<version>` once released (for local dev only: `npm install ../esm-common-modules`, never committed).
+Do not edit `version` in its `package.json` and do not publish (no `npm publish`, GitHub release/tag or `publish.yml` trigger): a person bumps the version and publishes after manual review. Recommend the bump (patch additive / minor breaking while 0.x) and tell the user that gaia-be needs `@moderta/api-contracts@<version>` once a person has released it (for local dev only: `npm install ../esm-common-modules`, never committed).
 
 ## 5. Consume in gaia-be
 
