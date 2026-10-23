@@ -35,7 +35,7 @@ Read every changed file fully and the direct callers/callees it touches. Also ch
 - Contract change that breaks consumers without version bump/notice.
 
 **Minor**
-- Naming/file layout deviations, missing Swagger decorators, non-intent method names, missing indexes for new filters, N+1 queries.
+- Naming/file layout deviations, missing Swagger decorators, non-intent method names, N+1 queries.
 
 ## 3. Run the gates
 

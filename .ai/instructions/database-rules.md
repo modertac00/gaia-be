@@ -17,7 +17,7 @@ Target ORM is **Sequelize** via `@nestjs/sequelize` + `sequelize-typescript`. Ex
 - Every schema change is a migration. Never use `sequelize.sync()` outside tests.
 - Location `src/database/migrations/<YYYYMMDDHHmmss>-<kebab-description>.ts` (umzug) — or the runner already configured in the repo; check before adding a second runner.
 - Each migration has `up` and a working `down`. Additive changes first; destructive changes (drop/rename) in a separate, later migration after code no longer uses the column.
-- Add indexes for every FK and every column used in list filters/sorting (e.g. `(owner_id, created_at)` for cursor pagination).
+- Do not add indexes in migrations or models; the team adds them manually. If a new FK or list filter/sort looks like it needs one, note it in the spec or PR instead.
 - Never edit a migration that has run in a shared environment; write a new one.
 
 ## Queries (repositories only)

@@ -23,8 +23,6 @@ export const up: Migration = async ({ context: queryInterface }) => {
       },
       { transaction },
     )
-    await queryInterface.addIndex(TABLE, ['owner_id', 'created_at', 'id'], { transaction })
-    await queryInterface.addIndex(TABLE, ['owner_id', 'status'], { transaction })
     // Snapshot of __FEATURE___STATUS_VALUES today; adding a value later = a new migration.
     await queryInterface.addConstraint(TABLE, {
       type: 'check',

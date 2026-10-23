@@ -44,10 +44,10 @@ src/gaia/
 ## Release flow
 
 1. Change contracts → `npm run build` in esm-common-modules.
-2. Bump `version` in its `package.json` (patch for additive, minor for breaking, while 0.x). No breaking change without listing consumers that must update.
-3. Publishing happens via GitHub release (`.github/workflows/publish.yml`); do not run `npm publish` from an agent.
+2. Report the version bump needed (patch for additive, minor for breaking, while 0.x) and list consumers that must update for any breaking change. A person bumps `version` in `package.json` manually; an agent does not.
+3. An agent never publishes the library: no `npm publish`, no GitHub release or tag, no triggering `.github/workflows/publish.yml`. Publishing happens only after a person has manually reviewed the contract changes and version.
 4. Local development before publish: in gaia-be, `npm install ../esm-common-modules` is acceptable temporarily; never commit a `file:` dependency.
-5. Bump `@moderta/api-contracts` in gaia-be `package.json` once published.
+5. Bump `@moderta/api-contracts` in gaia-be `package.json` only after a person has published the new version.
 
 ## Duplication tripwires
 

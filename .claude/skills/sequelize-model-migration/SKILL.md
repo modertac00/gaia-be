@@ -26,8 +26,8 @@ Start from `.claude/skills/nestjs-module/templates/models/feature.model.ts`.
 
 `templates/migration.ts` → `src/database/migrations/<YYYYMMDDHHmmss>-<kebab-description>.ts`.
 - Mirror the model exactly (names snake_case in the DB).
-- Index every FK and every filter/sort column; composite `(owner_id, created_at, id)` for cursor lists.
-- `down` reverses `up` completely (drop indexes, columns, constraints).
+- Do not add indexes; the team adds them manually. Note any suggested index in the spec or PR instead.
+- `down` reverses `up` completely (drop columns, constraints).
 - Destructive changes are separate, later migrations.
 
 ## 3. Repository
