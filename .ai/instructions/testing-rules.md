@@ -21,7 +21,7 @@ Stack: Jest + `@nestjs/testing` + supertest (add them if missing: `jest`, `ts-je
 
 Per endpoint, cover at minimum:
 1. Happy path with the response matching the contract schema (`schema.parse(res.body)`).
-2. Validation failure → 400 with `errors[]`.
+2. Validation failure → 400 with `errors` keyed by field name (`string[]` per field).
 3. Missing/invalid token → 401.
 4. Another user's resource → 404.
 5. Not found → 404.

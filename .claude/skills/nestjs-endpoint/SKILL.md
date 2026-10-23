@@ -19,7 +19,7 @@ Rules: `.ai/instructions/api-conventions.md`, `architecture.md`, `security-rules
 4. **Repository.** Add an intent-named method to the port and its Sequelize implementation; ownership id in the signature and the `where`. Accept `RepositoryOptions` if it can run in a transaction. Need a column/table? `sequelize-model-migration` first.
 5. **Service.** Add the use case: business rules, 404/409 decisions with contract message constants, transaction via `TRANSACTION_RUNNER` if it writes more than once.
 6. **Mapper.** Extend the mapper if the response changed.
-7. **Controller.** One handler: decorators (`@Get/@Post…`, `@HttpCode`, Swagger), `@CurrentUser()`, `ZodValidationPipe(schema)`, delegate in one line.
+7. **Controller.** One handler: decorators (`@Get/@Post…`, `@HttpCode`, one composed Swagger decorator), `@CurrentUser()`, `ZodValidationPipe(schema)`, delegate in one line. Define the Swagger decorator in the feature's `<feature>.swagger.ts`, not on the handler.
 8. **Tests** via `nestjs-testing`: service cases for each rule; e2e matrix (happy, 400, 401, 404 other user, 404 missing; 409 if applicable).
 9. **Verify**: `npm run lint && npm run build` (+ tests when present). Update `README.md`'s API list if it lists routes.
 

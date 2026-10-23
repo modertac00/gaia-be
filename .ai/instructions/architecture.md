@@ -13,7 +13,7 @@ Contracts (@moderta/api-contracts/gaia): Zod schemas + inferred types, used by e
 
 | Layer | Owns | Must NOT |
 |---|---|---|
-| Controller | Route, HTTP verb/status, `ZodValidationPipe` binding, `@CurrentUser()`, Swagger | contain business rules, touch models/Sequelize, catch-and-rethrow, map rows |
+| Controller | Route, HTTP verb/status, `ZodValidationPipe` binding, `@CurrentUser()`, one composed Swagger decorator per handler (defined in `<feature>.swagger.ts`) | contain business rules, touch models/Sequelize, catch-and-rethrow, map rows |
 | Service | Use-case/business rules, orchestration, transactions boundary, domain exceptions | import Sequelize models or `Op`, build SQL, read `Request`/headers |
 | Repository interface | Persistence port + DI token + plain `<Entity>Record` types it returns | leak Sequelize models into its signature (only the opaque `Transaction` handle via `RepositoryOptions`) |
 | Sequelize repository | Queries, `where` predicates (incl. ownership), pagination, associations; converts rows with `row.get({ plain: true })` | contain business rules, throw HTTP exceptions, or return model instances |
