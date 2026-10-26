@@ -14,12 +14,12 @@ import {
   type AuthenticatedUser,
   USER_ACCESS_RESOLVER,
   type UserAccessResolver,
-} from '../../common/auth'
-import { appConfig } from '../../config'
-import { toHttpException } from '../utils/auth-errors'
-import { toAuthSession, toAuthUser } from '../utils/auth.mapper'
+} from '@/common/auth'
+import { appConfig } from '@/config'
+import { toHttpException } from '@/auth/utils/auth-errors'
+import { toAuthSession, toAuthUser } from '@/auth/utils/auth-mapper'
 import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
-import { AUTH_PROVIDER, type AuthProvider, AuthProviderError, type ProviderSession } from '../interfaces/auth-provider.interface'
+import { AUTH_PROVIDER, type AuthProvider, AuthProviderError, type ProviderSession } from '@/auth/interfaces/auth-provider.interface'
 
 const RECOVERY_AUTH_METHOD = 'recovery'
 

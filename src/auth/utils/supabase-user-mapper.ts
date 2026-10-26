@@ -19,7 +19,7 @@ export function readAuthMethods(accessToken: string): string[] {
 
 export function toAuthIdentity(user: User, authMethods: string[] = []): AuthIdentity {
   const email = user.email ?? ''
-  const name = readString(user.user_metadata, 'name') ?? readString(user.user_metadata, 'full_name') ?? email.split('@')[0]
+  const name = readString(user.user_metadata, 'full_name') ?? email.split('@')[0]
   return { id: user.id, email, name, appMetadata: user.app_metadata ?? {}, authMethods }
 }
 

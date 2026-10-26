@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { DEFAULT_GAIA_ROLE, GAIA_APP_METADATA_KEY } from '@moderta/api-contracts/gaia'
 import type { AuthError, Session } from '@supabase/supabase-js'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
-import { SupabaseService } from '../../supabase/supabase.service'
+import { SupabaseService } from '@/supabase/supabase.service'
 import {
   type AuthProvider,
   AuthProviderError,
@@ -10,7 +10,7 @@ import {
   type CreateAccountInput,
   type ProviderSession,
 } from '../interfaces/auth-provider.interface'
-import { readAuthMethods, toAuthIdentity } from '../utils/supabase-user.mapper'
+import { readAuthMethods, toAuthIdentity } from '@/auth/utils/supabase-user-mapper'
 
 const EMAIL_TAKEN_CODES = ['email_exists', 'user_already_exists']
 
