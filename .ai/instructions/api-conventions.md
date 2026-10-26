@@ -32,19 +32,32 @@ Always return the full resource contract (not partial `{ id, status }` objects) 
 - Cursor pagination via the shared `cursorPageQuerySchema` (`cursor?: string`, `limit: 1..100`, default per endpoint) extended per endpoint with filters (`status`, `search`, ...).
 - Response via shared `cursorPageSchema(itemSchema)` → `{ items: T[]; nextCursor: string | null }`.
 
-## Errors
+## Responses (universal envelope)
 
-Single envelope produced by the global exception filter:
+Every response is wrapped by the global `ResponseInterceptor` (success) or `AllExceptionsFilter` (error). Handlers return the plain contract body; never build the envelope by hand. Types: `ApiSuccessResponse<T>` / `ApiErrorResponse` from `@moderta/api-contracts/gaia`.
+
+Success (`message` defaults from the status, e.g. `OK` / `Created`; override per handler with `@ResponseMessage('...')`):
+
+```json
+{ "success": true, "statusCode": 200, "message": "OK", "data": { "...": "..." }, "timestamp": "2026-10-26T10:00:00.000Z", "path": "/auth/me" }
+```
+
+204 and empty bodies, `StreamableFile`/`Buffer` and handlers that write the response themselves are not wrapped.
+
+## Errors
 
 ```json
 {
+  "success": false,
   "statusCode": 400,
   "message": "Validation failed",
-  "errors": { "title": ["Too small: expected string to have >=1 characters"], "author": { "name": ["Required"] } }
+  "errors": { "title": ["Too small: expected string to have >=1 characters"], "author": { "name": ["Required"] } },
+  "timestamp": "2026-10-26T10:00:00.000Z",
+  "path": "/research"
 }
 ```
 
-`errors` is present only for validation failures (shape produced by `ZodValidationPipe`). It is an object mirroring the request body/query: keys are the same field names the client sent, nested objects for nested fields, and each invalid field maps to a `string[]` of its messages. A failure with no field path is reported under `body`. Use 400 validation, 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch.
+`errors` is present only for validation failures (shape produced by `ZodValidationPipe`). It is an object mirroring the request body/query: keys are the same field names the client sent, nested objects for nested fields, and each invalid field maps to a `string[]` of its messages. A failure with no field path is reported under `body`. Use 400 validation, 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch. Unknown errors become `500 Internal server error`; the real error is logged server-side only.
 
 ## Swagger
 

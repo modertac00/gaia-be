@@ -1,25 +1,26 @@
-import { Global, Module } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { Pool } from 'pg'
-import { DATABASE_POOL } from './database.tokens'
+import { Logger, Module } from '@nestjs/common'
+import { type ConfigType } from '@nestjs/config'
+import { SequelizeModule } from '@nestjs/sequelize'
+import { appConfig, databaseConfig } from '../config'
 
-@Global()
+const logger = new Logger('Sequelize')
+
 @Module({
-  providers: [
-    {
-      provide: DATABASE_POOL,
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const connectionString = configService.get<string>('DATABASE_URL')
-
-        if (!connectionString) {
-          throw new Error('DATABASE_URL is required')
-        }
-
-        return new Pool({ connectionString })
-      },
-    },
+  imports: [
+    SequelizeModule.forRootAsync({
+      inject: [databaseConfig.KEY, appConfig.KEY],
+      useFactory: (db: ConfigType<typeof databaseConfig>, app: ConfigType<typeof appConfig>) => ({
+        dialect: db.dialect,
+        host: db.host,
+        port: db.port,
+        username: db.username,
+        password: db.password,
+        database: db.database,
+        autoLoadModels: true,
+        synchronize: true, // for development only, use migrations for production
+        logging: app.isDevelopment ? (sql: string) => logger.debug(sql) : false,
+      }),
+    }),
   ],
-  exports: [DATABASE_POOL],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }
