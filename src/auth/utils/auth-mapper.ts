@@ -1,7 +1,7 @@
 import type { AuthSession, AuthUser } from '@moderta/api-contracts/gaia'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
-import type { UserAccess } from '../../common/auth'
-import type { ProviderSession } from '../interfaces/auth-provider.interface'
+import type { UserAccess } from '@/common/auth'
+import type { ProviderSession } from '@/auth/interfaces/auth-provider.interface'
 
 export function toAuthUser(identity: Pick<AuthIdentity, 'id' | 'email' | 'name'>, access: UserAccess): AuthUser {
   return {
