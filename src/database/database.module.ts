@@ -1,7 +1,7 @@
 import { Logger, Module } from '@nestjs/common'
 import { type ConfigType } from '@nestjs/config'
 import { SequelizeModule } from '@nestjs/sequelize'
-import { appConfig, databaseConfig } from '../config'
+import { appConfig, databaseConfig } from '@/config'
 
 const logger = new Logger('Sequelize')
 

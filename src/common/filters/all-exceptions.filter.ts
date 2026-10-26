@@ -1,7 +1,7 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import type { ApiErrorResponse } from '@moderta/api-contracts/gaia'
 import type { Request, Response } from 'express'
-import { requestPath } from '../http/request-path'
+import { requestPath } from '@/common/http/request-path'
 
 export const INTERNAL_ERROR_MESSAGE = 'Internal server error'
 

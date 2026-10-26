@@ -12,8 +12,8 @@ import { Reflector } from '@nestjs/core'
 import type { ApiSuccessResponse } from '@moderta/api-contracts/gaia'
 import type { Request, Response } from 'express'
 import { map, type Observable } from 'rxjs'
-import { RESPONSE_MESSAGE_KEY } from '../decorators/response-message.decorator'
-import { requestPath } from '../http/request-path'
+import { RESPONSE_MESSAGE_KEY } from '@/common/decorators/response-message.decorator'
+import { requestPath } from '@/common/http/request-path'
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, ApiSuccessResponse<T> | T> {

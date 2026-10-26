@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { GAIA_APP_METADATA_KEY, gaiaAppMetadataSchema } from '@moderta/api-contracts/gaia'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
 import { RoleAbilityRegistry } from './role-ability-registry'
-import type { UserAccess, UserAccessResolver } from '../interface/user-access-resolver'
+import type { UserAccess, UserAccessResolver } from '@/common/auth/interface/user-access-resolver'
 
 @Injectable()
 export class MetadataUserAccessResolver implements UserAccessResolver {

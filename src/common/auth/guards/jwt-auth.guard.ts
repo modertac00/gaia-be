@@ -7,12 +7,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { ACCESS_TOKEN_VERIFIER, type AccessTokenVerifier } from '../interface/access-token-verifier'
+import { ACCESS_TOKEN_VERIFIER, type AccessTokenVerifier } from '@/common/auth/interface/access-token-verifier'
 import { FORBIDDEN_MESSAGE, UNAUTHORIZED_MESSAGE } from '@moderta/api-contracts/gaia'
-import type { AuthenticatedRequest } from '../interface/authenticated-user'
-import { extractBearerToken } from '../utils/bearer-token'
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
-import { USER_ACCESS_RESOLVER, type UserAccessResolver } from '../interface/user-access-resolver'
+import type { AuthenticatedRequest } from '@/common/auth/interface/authenticated-user'
+import { extractBearerToken } from '@/common/auth/utils/bearer-token'
+import { IS_PUBLIC_KEY } from '@/common/auth/decorators/public.decorator'
+import { USER_ACCESS_RESOLVER, type UserAccessResolver } from '@/common/auth/interface/user-access-resolver'
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
