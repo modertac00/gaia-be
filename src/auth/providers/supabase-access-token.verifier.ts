@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
-import type { AccessTokenVerifier } from '../../common/auth'
-import { toHttpException } from '../utils/auth-errors'
-import { AUTH_PROVIDER, type AuthProvider, AuthProviderError } from '../interfaces/auth-provider.interface'
+import type { AccessTokenVerifier } from '@/common/auth'
+import { toHttpException } from '@/auth/utils/auth-errors'
+import { AUTH_PROVIDER, type AuthProvider, AuthProviderError } from '@/auth/interfaces/auth-provider.interface'
 
 @Injectable()
 export class SupabaseAccessTokenVerifier implements AccessTokenVerifier {

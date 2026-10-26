@@ -8,25 +8,26 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
+import { AUTH_PROVIDER_ERROR_KIND } from '@/auth/constants/auth.constants'
 import type { AuthProviderError } from '../interfaces/auth-provider.interface'
 
 export function toHttpException({ kind }: AuthProviderError): HttpException {
   switch (kind) {
-    case 'invalid_credentials':
+    case AUTH_PROVIDER_ERROR_KIND.INVALID_CREDENTIALS:
       return new UnauthorizedException(AUTH_RESPONSE_MESSAGES.INVALID_CREDENTIALS)
-    case 'invalid_token':
+    case AUTH_PROVIDER_ERROR_KIND.INVALID_TOKEN:
       return new UnauthorizedException(AUTH_RESPONSE_MESSAGES.INVALID_REFRESH_TOKEN)
-    case 'email_taken':
+    case AUTH_PROVIDER_ERROR_KIND.EMAIL_TAKEN:
       return new ConflictException(AUTH_RESPONSE_MESSAGES.ACCOUNT_NOT_CREATED)
-    case 'weak_password':
+    case AUTH_PROVIDER_ERROR_KIND.WEAK_PASSWORD:
       return new BadRequestException(AUTH_RESPONSE_MESSAGES.WEAK_PASSWORD)
-    case 'same_password':
+    case AUTH_PROVIDER_ERROR_KIND.SAME_PASSWORD:
       return new UnprocessableEntityException(AUTH_RESPONSE_MESSAGES.SAME_PASSWORD)
-    case 'bad_request':
+    case AUTH_PROVIDER_ERROR_KIND.BAD_REQUEST:
       return new BadRequestException(AUTH_RESPONSE_MESSAGES.BAD_REQUEST)
-    case 'rate_limited':
+    case AUTH_PROVIDER_ERROR_KIND.RATE_LIMITED:
       return new HttpException(AUTH_RESPONSE_MESSAGES.RATE_LIMITED, HttpStatus.TOO_MANY_REQUESTS)
-    case 'unavailable':
+    case AUTH_PROVIDER_ERROR_KIND.UNAVAILABLE:
       return new ServiceUnavailableException(AUTH_RESPONSE_MESSAGES.UNAVAILABLE)
   }
 }

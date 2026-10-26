@@ -1,5 +1,6 @@
-import type { User } from '@supabase/supabase-js'
+import type { AMREntry, User } from '@supabase/supabase-js'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
+import { SUPABASE_USER_METADATA_KEY } from '@/auth/constants/auth.constants'
 
 export function readAuthMethods(accessToken: string): string[] {
   try {
@@ -9,7 +10,7 @@ export function readAuthMethods(accessToken: string): string[] {
     if (!Array.isArray(payload.amr)) return []
     return payload.amr.flatMap((entry: unknown) => {
       if (typeof entry === 'string') return [entry]
-      const method = (entry as { method?: unknown } | null)?.method
+      const method = (entry as Partial<AMREntry> | null)?.method
       return typeof method === 'string' ? [method] : []
     })
   } catch {
@@ -19,7 +20,10 @@ export function readAuthMethods(accessToken: string): string[] {
 
 export function toAuthIdentity(user: User, authMethods: string[] = []): AuthIdentity {
   const email = user.email ?? ''
-  const name = readString(user.user_metadata, 'full_name') ?? email.split('@')[0]
+  const name =
+    readString(user.user_metadata, SUPABASE_USER_METADATA_KEY.NAME) ??
+    readString(user.user_metadata, SUPABASE_USER_METADATA_KEY.FULL_NAME) ??
+    email.split('@')[0]
   return { id: user.id, email, name, appMetadata: user.app_metadata ?? {}, authMethods }
 }
 

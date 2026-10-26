@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { DEFAULT_GAIA_ROLE, GAIA_APP_METADATA_KEY } from '@moderta/api-contracts/gaia'
-import type { AuthError, Session } from '@supabase/supabase-js'
+import type { AuthError, Session, SignOutScope } from '@supabase/supabase-js'
 import type { AuthIdentity } from '@moderta/api-contracts/gaia'
 import { SupabaseService } from '@/supabase/supabase.service'
 import {
@@ -10,13 +10,18 @@ import {
   type CreateAccountInput,
   type ProviderSession,
 } from '../interfaces/auth-provider.interface'
+import {
+  AUTH_PROVIDER_ERROR_KIND as ERROR_KIND,
+  AUTH_SIGN_OUT_SCOPE,
+  SUPABASE_AUTH_ERROR_CODE,
+  SUPABASE_EMAIL_TAKEN_CODES,
+  SUPABASE_USER_METADATA_KEY,
+} from '@/auth/constants/auth.constants'
 import { readAuthMethods, toAuthIdentity } from '@/auth/utils/supabase-user-mapper'
 
-const EMAIL_TAKEN_CODES = ['email_exists', 'user_already_exists']
-
 function toProviderError(error: AuthError, clientError: AuthProviderErrorKind): AuthProviderError {
-  if (error.status === 429) return new AuthProviderError('rate_limited')
-  if (!error.status || error.status >= 500) return new AuthProviderError('unavailable')
+  if (error.status === HttpStatus.TOO_MANY_REQUESTS) return new AuthProviderError(ERROR_KIND.RATE_LIMITED)
+  if (!error.status || error.status >= HttpStatus.INTERNAL_SERVER_ERROR) return new AuthProviderError(ERROR_KIND.UNAVAILABLE)
   return new AuthProviderError(clientError)
 }
 
@@ -35,8 +40,8 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async signInWithPassword(email: string, password: string): Promise<ProviderSession> {
     const { data, error } = await this.supabase.getPublicClient().auth.signInWithPassword({ email, password })
-    if (error) throw toProviderError(error, 'invalid_credentials')
-    if (!data.session) throw new AuthProviderError('unavailable')
+    if (error) throw toProviderError(error, ERROR_KIND.INVALID_CREDENTIALS)
+    if (!data.session) throw new AuthProviderError(ERROR_KIND.UNAVAILABLE)
 
     return toProviderSession(data.session)
   }
@@ -46,14 +51,14 @@ export class SupabaseAuthProvider implements AuthProvider {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name },
+      user_metadata: { [SUPABASE_USER_METADATA_KEY.NAME]: name },
       app_metadata: { [GAIA_APP_METADATA_KEY]: { roles: [DEFAULT_GAIA_ROLE] } },
     })
 
     if (error) {
-      if (error.code && EMAIL_TAKEN_CODES.includes(error.code)) throw new AuthProviderError('email_taken')
-      if (error.code === 'weak_password') throw new AuthProviderError('weak_password')
-      throw toProviderError(error, 'bad_request')
+      if (error.code && SUPABASE_EMAIL_TAKEN_CODES.includes(error.code)) throw new AuthProviderError(ERROR_KIND.EMAIL_TAKEN)
+      if (error.code === SUPABASE_AUTH_ERROR_CODE.WEAK_PASSWORD) throw new AuthProviderError(ERROR_KIND.WEAK_PASSWORD)
+      throw toProviderError(error, ERROR_KIND.BAD_REQUEST)
     }
 
     return toAuthIdentity(data.user)
@@ -61,29 +66,29 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async refreshSession(refreshToken: string): Promise<ProviderSession> {
     const { data, error } = await this.supabase.getPublicClient().auth.refreshSession({ refresh_token: refreshToken })
-    if (error) throw toProviderError(error, 'invalid_token')
-    if (!data.session) throw new AuthProviderError('invalid_token')
+    if (error) throw toProviderError(error, ERROR_KIND.INVALID_TOKEN)
+    if (!data.session) throw new AuthProviderError(ERROR_KIND.INVALID_TOKEN)
 
     return toProviderSession(data.session)
   }
 
-  async signOut(accessToken: string, scope: 'local' | 'global' = 'local'): Promise<void> {
+  async signOut(accessToken: string, scope: SignOutScope = AUTH_SIGN_OUT_SCOPE.LOCAL): Promise<void> {
     const { error } = await this.supabase.getAdminClient().auth.admin.signOut(accessToken, scope)
-    if (error) throw toProviderError(error, 'invalid_token')
+    if (error) throw toProviderError(error, ERROR_KIND.INVALID_TOKEN)
   }
 
   async sendPasswordReset(email: string, redirectTo: string): Promise<void> {
     const { error } = await this.supabase.getPublicClient().auth.resetPasswordForEmail(email, { redirectTo })
-    if (error) throw toProviderError(error, 'unavailable')
+    if (error) throw toProviderError(error, ERROR_KIND.UNAVAILABLE)
   }
 
   async updatePassword(userId: string, password: string): Promise<void> {
     const { error } = await this.supabase.getAdminClient().auth.admin.updateUserById(userId, { password })
 
     if (error) {
-      if (error.code === 'weak_password') throw new AuthProviderError('weak_password')
-      if (error.code === 'same_password') throw new AuthProviderError('same_password')
-      throw toProviderError(error, 'bad_request')
+      if (error.code === SUPABASE_AUTH_ERROR_CODE.WEAK_PASSWORD) throw new AuthProviderError(ERROR_KIND.WEAK_PASSWORD)
+      if (error.code === SUPABASE_AUTH_ERROR_CODE.SAME_PASSWORD) throw new AuthProviderError(ERROR_KIND.SAME_PASSWORD)
+      throw toProviderError(error, ERROR_KIND.BAD_REQUEST)
     }
   }
 
@@ -91,8 +96,8 @@ export class SupabaseAuthProvider implements AuthProvider {
     const { data, error } = await this.supabase.getPublicClient().auth.getUser(accessToken)
 
     if (error) {
-      if (error.status && error.status < 500 && error.status !== 429) return null
-      throw toProviderError(error, 'invalid_token')
+      if (error.status && error.status < HttpStatus.INTERNAL_SERVER_ERROR && error.status !== HttpStatus.TOO_MANY_REQUESTS) return null
+      throw toProviderError(error, ERROR_KIND.INVALID_TOKEN)
     }
 
     return data.user ? toAuthIdentity(data.user, readAuthMethods(accessToken)) : null

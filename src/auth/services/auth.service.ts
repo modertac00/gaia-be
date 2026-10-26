@@ -16,12 +16,11 @@ import {
   type UserAccessResolver,
 } from '@/common/auth'
 import { appConfig } from '@/config'
+import { AUTH_SIGN_OUT_SCOPE, RECOVERY_AUTH_METHOD } from '@/auth/constants/auth.constants'
 import { toHttpException } from '@/auth/utils/auth-errors'
 import { toAuthSession, toAuthUser } from '@/auth/utils/auth-mapper'
 import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
 import { AUTH_PROVIDER, type AuthProvider, AuthProviderError, type ProviderSession } from '@/auth/interfaces/auth-provider.interface'
-
-const RECOVERY_AUTH_METHOD = 'recovery'
 
 // will move this to constants later, when reset password properly implemented
 const RESET_PASSWORD_PATH = '/auth/reset-password'
@@ -77,7 +76,7 @@ export class AuthService {
 
     await this.run(async () => {
       await this.provider.updatePassword(user.id, password)
-      await this.provider.signOut(user.accessToken, 'global')
+      await this.provider.signOut(user.accessToken, AUTH_SIGN_OUT_SCOPE.GLOBAL)
     })
     return { message: AUTH_RESPONSE_MESSAGES.PASSWORD_RESET }
   }
