@@ -4,8 +4,9 @@
 
 - A global `JwtAuthGuard` (registered with `APP_GUARD`) authenticates every route. Opt out only with `@Public()` (health, login).
 - Controllers get the user via `@CurrentUser() user: AuthenticatedUser`. Never parse the `Authorization` header in a controller or service.
-- JWT secret and expiry come from validated config (`JWT_SECRET` required, no fallback).
-- Passwords: bcrypt hash only; never log, return or compare plaintext outside the auth service.
+- Supabase is the auth provider; the backend verifies access tokens via `auth.getUser(token)`. Supabase keys come from validated config (`SUPABASE_*`, no fallback); the service-role key stays server-side.
+- Roles live in `app_metadata.gaia` only, never `user_metadata`. Accounts without it get 403 (the Supabase project is shared with another product).
+- Passwords are handled by Supabase; never log or return them, and never log tokens or emails.
 
 ## Authorization and ownership
 

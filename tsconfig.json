@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "node16",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -13,8 +13,11 @@
     "strict": true,
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
-    "moduleResolution": "node",
-    "types": ["node"]
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts"]
 }

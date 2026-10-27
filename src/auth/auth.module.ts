@@ -1,29 +1,19 @@
-import { Module } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { JwtModule } from '@nestjs/jwt'
-import type { JwtSignOptions } from '@nestjs/jwt'
-import { UsersModule } from '../users/users.module'
+import { Global, Module } from '@nestjs/common'
+import { ACCESS_TOKEN_VERIFIER } from '../common/auth'
 import { AuthController } from './auth.controller'
-import { AuthService } from './auth.service'
+import { AuthService } from './services/auth.service'
+import { AUTH_PROVIDER } from './interfaces/auth-provider.interface'
+import { SupabaseAccessTokenVerifier } from './providers/supabase-access-token.verifier'
+import { SupabaseAuthProvider } from './providers/supabase-auth.provider'
 
+@Global()
 @Module({
-  imports: [
-    UsersModule,
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>(
-            'JWT_EXPIRES_IN',
-            '1d',
-          ) as JwtSignOptions['expiresIn'],
-        },
-      }),
-    }),
-  ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService, JwtModule],
+  providers: [
+    AuthService,
+    { provide: AUTH_PROVIDER, useClass: SupabaseAuthProvider },
+    { provide: ACCESS_TOKEN_VERIFIER, useClass: SupabaseAccessTokenVerifier },
+  ],
+  exports: [ACCESS_TOKEN_VERIFIER],
 })
-export class AuthModule {}
+export class AuthModule { }

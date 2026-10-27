@@ -4,11 +4,14 @@ services:
       context: .
     container_name: gaia-api
     restart: unless-stopped
+    # Real values (Supabase keys, DB credentials) come from .env at runtime; .env is not baked into the image.
+    env_file: .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/gaia
-      JWT_SECRET: ${JWT_SECRET:-replace-with-a-long-random-secret}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      DB_HOST: postgres
+      DB_PORT: 5432
       PORT: 3001
+      # This compose file is the dev flow (ts-node watch); NODE_ENV defaults to production otherwise.
+      NODE_ENV: development
     ports:
       - "${API_PORT:-3001}:3001"
     command: sh scripts/docker-dev-watch.sh
@@ -38,15 +41,15 @@ services:
     container_name: gaia-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gaia
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${POSTGRES_PORT:-55432}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - gaia_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 20
