@@ -58,14 +58,14 @@ List (cursor pagination): the service returns `paginated(page, limit)` (a `ListR
   "error": {
     "code": "VALIDATION_FAILED",
     "message": "Validation failed",
-    "details": { "fields": { "title": ["Too small: expected string to have >=1 characters"], "author.name": ["Required"] } }
+    "details": { "fields": { "title": ["Too small: expected string to have >=1 characters"], "author": { "name": ["Required"] } } }
   },
   "meta": { "requestId": "req_7c12a1b2c3d4" }
 }
 ```
 
 - `code` is derived from the HTTP status (400 `BAD_REQUEST`, 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`, 409 `CONFLICT`, 422 `UNPROCESSABLE_ENTITY`, 429 `RATE_LIMITED`, 503 `SERVICE_UNAVAILABLE`, other 4xx `BAD_REQUEST`, 5xx `INTERNAL_ERROR`) unless the thrown error sets its own.
-- Validation failures (`ZodValidationPipe`, or `throw new ValidationFailedException(fields)` in a service) are 400 `VALIDATION_FAILED` with `details.fields`: a flat map of dotted field path to `string[]` messages; a failure with no path is reported under `body`.
+- Validation failures (`ZodValidationPipe`, or `throw new ValidationFailedException(fields)` in a service) are 400 `VALIDATION_FAILED` with `details.fields`: an object that mirrors the request: each invalid field maps to its `string[]` messages and a nested object maps to its own fields (array items are keyed by index). Messages of a node that also has invalid children go under `_errors`; a failure with no path is reported under `body`.
 - A service can throw `new ApiException(status, { code?, message, details? })` to return a custom domain code (e.g. `POLICY_BLOCKED`). Use 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch.
 - Unknown errors become `500 INTERNAL_ERROR` / `Internal server error`; the real cause is logged server-side only (never request bodies, tokens or bound values).
 

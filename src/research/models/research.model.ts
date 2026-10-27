@@ -43,6 +43,9 @@ export class ResearchModel extends Model {
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare minSources: number
 
+  @Column({ type: DataType.INTEGER, defaultValue: 0, allowNull: false })
+  declare verifiedSourceCount: number
+
   @Column({ type: DataType.UUID, allowNull: false })
   declare createdBy: string
 
