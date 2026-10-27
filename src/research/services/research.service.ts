@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -16,12 +15,12 @@ import {
   RESEARCH_NOT_FOUND_MESSAGE,
   RESEARCH_VALIDATION_MESSAGES,
   type Research,
-  type ResearchPage,
   type UpdateResearchDto,
 } from '@moderta/api-contracts/gaia'
 import { decodeCursor, toRecordPage } from '@/common/database/cursor-pagination'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
-import { VALIDATION_FAILED_MESSAGE } from '@/common/pipes/zod-validation.pipe'
+import { ValidationFailedException } from '@/common/http/api-exception'
+import { ListResult, paginated } from '@/common/http/response-results'
 import { RESEARCH_REPOSITORY } from '@/research/interfaces/research-repository.interface'
 import { toResearch } from '@/research/utils/research-mapper'
 import { ResearchRepository } from '@/research/repositories/research.repository'
@@ -53,20 +52,17 @@ export class ResearchService {
     })
   }
 
-  async list(userId: string, query: ListResearchQuery): Promise<ResearchPage> {
+  async list(userId: string, query: ListResearchQuery): Promise<ListResult<Research>> {
     const { cursor, limit, ...filter } = query
     const after = cursor ? decodeCursor(cursor) : null
     if (cursor && !after) {
-      throw new BadRequestException({
-        message: VALIDATION_FAILED_MESSAGE,
-        errors: { cursor: [INVALID_CURSOR_MESSAGE] },
-      })
+      throw new ValidationFailedException({ cursor: [INVALID_CURSOR_MESSAGE] })
     }
 
     const records = await this.repository.findVisiblePage(userId, filter, { after, limit })
     const page = toRecordPage(records, limit)
 
-    return { items: page.records.map(toResearch), nextCursor: page.nextCursor }
+    return paginated<Research>({ items: page.records.map(toResearch), nextCursor: page.nextCursor }, limit)
   }
 
   async get(userId: string, researchId: string): Promise<Research> {
@@ -95,10 +91,7 @@ export class ResearchService {
       const to = changes.pubYearTo ?? owned.pubYearTo
 
       if (from > to) {
-        throw new BadRequestException({
-          message: VALIDATION_FAILED_MESSAGE,
-          errors: { pubYearFrom: [RESEARCH_VALIDATION_MESSAGES.PUB_YEAR_ORDER] },
-        })
+        throw new ValidationFailedException({ pubYearFrom: [RESEARCH_VALIDATION_MESSAGES.PUB_YEAR_ORDER] })
       }
 
       await this.repository.update(researchId, userId, changes, options)

@@ -20,7 +20,7 @@ const logger = new Logger('Sequelize')
         password: db.password,
         database: db.database,
         autoLoadModels: true,
-        synchronize: false, // schema changes only via migrations (npm run db:migrate:up)
+        synchronize: true, // schema changes only via migrations in prod(npm run db:migrate:up)
         logging: app.isDevelopment ? (sql: string) => logger.debug(sql) : false,
       }),
     }),

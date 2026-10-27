@@ -1,30 +1,17 @@
-import { BadRequestException, Injectable, type PipeTransform } from '@nestjs/common'
+import { Injectable, type PipeTransform } from '@nestjs/common'
+import type { ApiValidationDetails } from '@moderta/api-contracts/gaia'
 import type { ZodType } from 'zod'
+import { ValidationFailedException } from '@/common/http/api-exception'
 
-export interface ValidationErrors {
-  [field: string]: string[] | ValidationErrors
-}
+type FieldErrors = ApiValidationDetails['fields']
 
-export const VALIDATION_FAILED_MESSAGE = 'Validation failed'
-
-const isMessages = (node: string[] | ValidationErrors): node is string[] => Array.isArray(node)
-
-function toValidationErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): ValidationErrors {
-  const errors: ValidationErrors = {}
+function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): FieldErrors {
+  const fields: FieldErrors = {}
   for (const issue of issues) {
-    const path = issue.path.length ? issue.path.map(String) : ['body']
-    let node = errors
-    for (const key of path.slice(0, -1)) {
-      const next = node[key]
-      if (next === undefined || isMessages(next)) node[key] = {}
-      node = node[key] as ValidationErrors
-    }
-    const leaf = path.at(-1) as string
-    const existing = node[leaf]
-    if (existing === undefined) node[leaf] = [issue.message]
-    else if (isMessages(existing)) existing.push(issue.message)
+    const key = issue.path.length ? issue.path.map(String).join('.') : 'body'
+      ; (fields[key] ??= []).push(issue.message)
   }
-  return errors
+  return fields
 }
 
 @Injectable()
@@ -35,10 +22,7 @@ export class ZodValidationPipe<TOutput = unknown> implements PipeTransform<unkno
     const result = this.schema.safeParse(value)
 
     if (!result.success) {
-      throw new BadRequestException({
-        message: VALIDATION_FAILED_MESSAGE,
-        errors: toValidationErrors(result.error.issues),
-      })
+      throw new ValidationFailedException(toFieldErrors(result.error.issues))
     }
 
     return result.data

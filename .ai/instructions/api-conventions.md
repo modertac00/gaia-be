@@ -34,30 +34,40 @@ Always return the full resource contract (not partial `{ id, status }` objects) 
 
 ## Responses (universal envelope)
 
-Every response is wrapped by the global `ResponseInterceptor` (success) or `AllExceptionsFilter` (error). Handlers return the plain contract body; never build the envelope by hand. Types: `ApiSuccessResponse<T>` / `ApiErrorResponse` from `@moderta/api-contracts/gaia`.
+Every response is wrapped by the global `ResponseInterceptor` (success) or `AllExceptionsFilter` (error); handlers return the plain contract body and never build the envelope. Types come from `@moderta/api-contracts/gaia` (`ApiSuccessResponse`, `ApiListResponse`, `ApiErrorResponse`, `API_ERROR_CODE`). There is no `statusCode`/`message`/`timestamp`/`path` in the body: the HTTP status carries the status, and every response has `meta.requestId` (also sent as the `x-request-id` header; a safe inbound `x-request-id` is honoured).
 
-Success (`message` defaults from the status, e.g. `OK` / `Created`; override per handler with `@ResponseMessage('...')`):
+Single resource:
 
 ```json
-{ "success": true, "statusCode": 200, "message": "OK", "data": { "...": "..." }, "timestamp": "2026-10-26T10:00:00.000Z", "path": "/auth/me" }
+{ "success": true, "data": { "id": "..." }, "meta": { "requestId": "req_7c10a1b2c3d4" } }
 ```
 
-204 and empty bodies, `StreamableFile`/`Buffer` and handlers that write the response themselves are not wrapped.
+List (cursor pagination): the service returns `paginated(page, limit)` (a `ListResult`), the interceptor emits
+
+```json
+{ "success": true, "data": [ { "id": "..." } ], "meta": { "requestId": "req_...", "limit": 20, "nextCursor": "..." } }
+```
+
+`meta.nextCursor` is `null` on the last page. Extra meta keys: return `withMeta(data, { ... })` (merged next to `requestId`). 204, empty bodies, `StreamableFile`/`Buffer` and handlers that write the response themselves are not wrapped. Auth endpoints that return `{ message }` keep it inside `data`.
 
 ## Errors
 
 ```json
 {
   "success": false,
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": { "title": ["Too small: expected string to have >=1 characters"], "author": { "name": ["Required"] } },
-  "timestamp": "2026-10-26T10:00:00.000Z",
-  "path": "/research"
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Validation failed",
+    "details": { "fields": { "title": ["Too small: expected string to have >=1 characters"], "author.name": ["Required"] } }
+  },
+  "meta": { "requestId": "req_7c12a1b2c3d4" }
 }
 ```
 
-`errors` is present only for validation failures (shape produced by `ZodValidationPipe`). It is an object mirroring the request body/query: keys are the same field names the client sent, nested objects for nested fields, and each invalid field maps to a `string[]` of its messages. A failure with no field path is reported under `body`. Use 400 validation, 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch. Unknown errors become `500 Internal server error`; the real error is logged server-side only.
+- `code` is derived from the HTTP status (400 `BAD_REQUEST`, 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`, 409 `CONFLICT`, 422 `UNPROCESSABLE_ENTITY`, 429 `RATE_LIMITED`, 503 `SERVICE_UNAVAILABLE`, other 4xx `BAD_REQUEST`, 5xx `INTERNAL_ERROR`) unless the thrown error sets its own.
+- Validation failures (`ZodValidationPipe`, or `throw new ValidationFailedException(fields)` in a service) are 400 `VALIDATION_FAILED` with `details.fields`: a flat map of dotted field path to `string[]` messages; a failure with no path is reported under `body`.
+- A service can throw `new ApiException(status, { code?, message, details? })` to return a custom domain code (e.g. `POLICY_BLOCKED`). Use 401 unauthenticated, 403 forbidden action, 404 not found **or not owned** (never reveal existence of others' resources), 409 conflict/version mismatch.
+- Unknown errors become `500 INTERNAL_ERROR` / `Internal server error`; the real cause is logged server-side only (never request bodies, tokens or bound values).
 
 ## Swagger
 

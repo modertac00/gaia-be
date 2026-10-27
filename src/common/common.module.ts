@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common'
+import { Global, type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import {
   JwtAuthGuard,
@@ -8,6 +8,7 @@ import {
   USER_ACCESS_RESOLVER,
 } from './auth'
 import { AllExceptionsFilter } from './filters/all-exceptions.filter'
+import { RequestIdMiddleware } from './http/request-id.middleware'
 import { ResponseInterceptor } from './interceptors/response.interceptor'
 
 @Global()
@@ -22,4 +23,9 @@ import { ResponseInterceptor } from './interceptors/response.interceptor'
   ],
   exports: [RoleAbilityRegistry, USER_ACCESS_RESOLVER],
 })
-export class CommonModule { }
+export class CommonModule implements NestModule {
+  // Middleware runs before guards, so errors thrown by guards also carry the request id.
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*path')
+  }
+}
