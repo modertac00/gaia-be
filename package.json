@@ -9,6 +9,8 @@
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "db:migrate:up": "ts-node -r tsconfig-paths/register scripts/migrate-sequelize.ts up",
+    "db:migrate:down": "ts-node -r tsconfig-paths/register scripts/migrate-sequelize.ts down",
     "account:create": "ts-node -r tsconfig-paths/register scripts/create-account.ts"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.8",
     "sequelize-typescript": "^2.1.6",
+    "umzug": "^3.8.3",
     "zod": "^4.6.7"
   },
   "devDependencies": {

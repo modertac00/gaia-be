@@ -14,6 +14,7 @@ checksum() {
 }
 
 npm run db:migrate
+npm run db:migrate:up
 
 npm run start:dev &
 app_pid="$!"
