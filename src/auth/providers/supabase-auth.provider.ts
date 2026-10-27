@@ -1,15 +1,14 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { DEFAULT_GAIA_ROLE, GAIA_APP_METADATA_KEY } from '@moderta/api-contracts/gaia'
 import type { AuthError, Session, SignOutScope } from '@supabase/supabase-js'
-import type { AuthIdentity } from '@moderta/api-contracts/gaia'
+import type { AuthIdentity, SignupDto } from '@moderta/api-contracts/gaia'
 import { SupabaseService } from '@/supabase/supabase.service'
 import {
   type AuthProvider,
   AuthProviderError,
   type AuthProviderErrorKind,
-  type CreateAccountInput,
   type ProviderSession,
-} from '../interfaces/auth-provider.interface'
+} from '@/auth/interfaces/auth-provider.interface'
 import {
   AUTH_PROVIDER_ERROR_KIND as ERROR_KIND,
   AUTH_SIGN_OUT_SCOPE,
@@ -46,7 +45,7 @@ export class SupabaseAuthProvider implements AuthProvider {
     return toProviderSession(data.session)
   }
 
-  async createAccount({ email, password, name }: CreateAccountInput): Promise<AuthIdentity> {
+  async createAccount({ email, password, name }: SignupDto): Promise<AuthIdentity> {
     const { data, error } = await this.supabase.getAdminClient().auth.admin.createUser({
       email,
       password,

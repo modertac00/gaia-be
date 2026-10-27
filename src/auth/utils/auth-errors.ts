@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common'
 import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
 import { AUTH_PROVIDER_ERROR_KIND } from '@/auth/constants/auth.constants'
-import type { AuthProviderError } from '../interfaces/auth-provider.interface'
+import type { AuthProviderError } from '@/auth/interfaces/auth-provider.interface'
 
 export function toHttpException({ kind }: AuthProviderError): HttpException {
   switch (kind) {

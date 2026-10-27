@@ -1,4 +1,4 @@
-import type { AuthIdentity } from '@moderta/api-contracts/gaia'
+import type { AuthIdentity, SignupDto } from '@moderta/api-contracts/gaia'
 import type { SignOutScope } from '@supabase/supabase-js'
 import type { AUTH_PROVIDER_ERROR_KIND } from '@/auth/constants/auth.constants'
 
@@ -11,12 +11,6 @@ export interface ProviderSession {
   identity: AuthIdentity
 }
 
-export interface CreateAccountInput {
-  email: string
-  password: string
-  name: string
-}
-
 export type AuthProviderErrorKind = (typeof AUTH_PROVIDER_ERROR_KIND)[keyof typeof AUTH_PROVIDER_ERROR_KIND]
 
 export class AuthProviderError extends Error {
@@ -27,7 +21,7 @@ export class AuthProviderError extends Error {
 
 export interface AuthProvider {
   signInWithPassword(email: string, password: string): Promise<ProviderSession>
-  createAccount(input: CreateAccountInput): Promise<AuthIdentity>
+  createAccount(input: SignupDto): Promise<AuthIdentity>
   refreshSession(refreshToken: string): Promise<ProviderSession>
   signOut(accessToken: string, scope?: SignOutScope): Promise<void>
   sendPasswordReset(email: string, redirectTo: string): Promise<void>

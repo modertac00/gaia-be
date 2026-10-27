@@ -14,7 +14,7 @@ import {
   type SignupDto,
   signupSchema,
 } from '@moderta/api-contracts/gaia'
-import { type AuthenticatedUser, CurrentUser, Public } from '../common/auth'
+import { type AuthenticatedUser, CurrentUser, Public } from '@/common/auth'
 import { ResponseMessage } from '@/common/decorators/response-message.decorator'
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe'
 import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
