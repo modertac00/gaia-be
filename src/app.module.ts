@@ -8,6 +8,7 @@ import { HealthController } from './health.controller'
 import { AuthModule } from './auth/auth.module'
 import { SupabaseModule } from './supabase/supabase.module'
 import { ResearchModule } from './research/research.module';
+import { SourcesModule } from './sources/sources.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ResearchModule } from './research/research.module';
     SupabaseModule,
     AuthModule,
     ResearchModule,
+    SourcesModule,
   ],
   controllers: [HealthController],
 })
