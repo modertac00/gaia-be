@@ -3,7 +3,6 @@ import type {
   ListSourcesQuery,
   Source,
   SourceQuestion,
-  SourceQuestionAnswer,
   SourceStance,
 } from '@moderta/api-contracts/gaia'
 
@@ -18,11 +17,6 @@ export type SourceRecord = Omit<Source, 'verifiedAt' | 'createdAt' | 'updatedAt'
 export type ClassificationHistoryRecord = Omit<ClassificationHistoryEntry, 'createdAt'> & { createdAt: Date }
 
 export type SourceQuestionRecord = Omit<SourceQuestion, 'questionId'> & { id: string; createdAt: Date }
-
-export interface NewSourceAnswer extends SourceQuestionAnswer {
-  questionId: string
-  llmRunId: string
-}
 
 export type SourceListFilter = Pick<ListSourcesQuery, 'stance' | 'verified' | 'included'>
 

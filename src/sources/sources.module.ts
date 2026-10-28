@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { AiModule } from '@/ai/ai.module'
 import { ResearchModule } from '@/research/research.module'
+import { SourceQuestionHandler } from '@/sources/handlers/source-question.handler'
 import { SOURCES_REPOSITORY } from '@/sources/interfaces/sources-repository.interface'
 import { ReadingListEntryModel } from '@/sources/models/reading-list-entry.model'
 import { SourceChatModel } from '@/sources/models/source-chat.model'
@@ -27,6 +28,6 @@ import { SourcesController } from '@/sources/sources.controller'
     ]),
   ],
   controllers: [SourcesController],
-  providers: [SourcesService, { provide: SOURCES_REPOSITORY, useClass: SourcesRepository }],
+  providers: [SourcesService, SourceQuestionHandler, { provide: SOURCES_REPOSITORY, useClass: SourcesRepository }],
 })
 export class SourcesModule { }

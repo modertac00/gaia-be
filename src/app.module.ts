@@ -9,16 +9,20 @@ import { AuthModule } from './auth/auth.module'
 import { SupabaseModule } from './supabase/supabase.module'
 import { ResearchModule } from './research/research.module';
 import { SourcesModule } from './sources/sources.module';
+import { QueueModule } from './queue/queue.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(configModuleOptions),
     LoggerModule,
     DatabaseModule,
+    QueueModule,
     CommonModule,
     SupabaseModule,
     AuthModule,
     ResearchModule,
+    AiModule,
     SourcesModule,
   ],
   controllers: [HealthController],

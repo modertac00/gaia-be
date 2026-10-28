@@ -8,6 +8,8 @@ import { setupSwagger } from '@/common/swagger'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  // Lets the queue consumers finish their in-flight messages when ECS stops the task (SIGTERM).
+  app.enableShutdownHooks()
   const config = app.get<ConfigType<typeof appConfig>>(appConfig.KEY)
 
   app.enableCors({ origin: config.frontendOrigin, credentials: false, exposedHeaders: [REQUEST_ID_HEADER] })

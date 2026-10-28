@@ -5,6 +5,7 @@ import {
   SCREENING_STAGE,
   SOURCE_QUESTION_STATUS,
   sourceContentLevelSchema,
+  type SourceQuestionAnswer,
   type SourceQuestionStatus,
   type SourceStance,
 } from '@moderta/api-contracts/gaia'
@@ -15,7 +16,6 @@ import type { RepositoryOptions } from '@/common/database/repository-options'
 import type {
   ClassificationHistoryRecord,
   NewClassificationEntry,
-  NewSourceAnswer,
   SourceListFilter,
   SourceQuestionRecord,
   SourceRecord,
@@ -25,7 +25,6 @@ import { SourceClassificationHistoryModel } from '@/sources/models/source-classi
 import { SourceScreeningModel } from '@/sources/models/source-screening.model'
 import { SourceModel } from '@/sources/models/source.model'
 
-/** What an answer row keeps in its metadata so the question can find it again. */
 const answerMetadataSchema = z.object({
   questionId: z.uuid(),
   pages: z.array(z.number().int().positive()),
@@ -33,7 +32,6 @@ const answerMetadataSchema = z.object({
 })
 type AnswerMetadata = z.infer<typeof answerMetadataSchema>
 
-/** A question with no answer is still waiting, unless its run was marked failed. */
 const questionStatusOf = (metadata: Record<string, unknown> | null): SourceQuestionStatus =>
   metadata?.status === SOURCE_QUESTION_STATUS.FAILED ? SOURCE_QUESTION_STATUS.FAILED : SOURCE_QUESTION_STATUS.QUEUED
 
@@ -130,7 +128,6 @@ export class SourcesRepository {
     })
   }
 
-  /** A question is the person's chat row; its answer is a later assistant row whose metadata points back at it. */
   async addQuestion(researchId: string, sourceId: string, userId: string, question: string): Promise<string> {
     const row = await this.chatModel.create({
       researchId,
@@ -143,32 +140,30 @@ export class SourcesRepository {
     return row.id
   }
 
-  async markQuestionFailed(researchId: string, sourceId: string, questionId: string): Promise<void> {
+  async failQuestion(questionId: string): Promise<void> {
     await this.chatModel.update(
       { metadata: { status: SOURCE_QUESTION_STATUS.FAILED } },
-      { where: { id: questionId, researchId, sourceId, role: CHAT_ROLE.PERSON } },
+      { where: { id: questionId, role: CHAT_ROLE.PERSON } },
     )
   }
 
-  async addAnswer(researchId: string, sourceId: string, answer: NewSourceAnswer): Promise<void> {
-    const metadata: AnswerMetadata = { questionId: answer.questionId, pages: answer.pages, contentLevel: answer.contentLevel }
+  async answerQuestion(questionId: string, answer: SourceQuestionAnswer): Promise<void> {
+    const question = await this.chatModel.findOne({ where: { id: questionId, role: CHAT_ROLE.PERSON } })
+    if (!question) return
 
-    await this.chatModel.create({
-      researchId,
-      sourceId,
-      role: CHAT_ROLE.ASSISTANT,
-      message: answer.answer,
-      metadata,
-      llmRunId: answer.llmRunId,
+    const { researchId, sourceId } = question
+    const existing = await this.chatModel.findOne({
+      attributes: ['id'],
+      where: { researchId, sourceId, role: CHAT_ROLE.ASSISTANT, [Op.and]: literal("metadata->>'questionId' = :questionId") },
+      replacements: { questionId },
     })
+    if (existing) return
+
+    const metadata: AnswerMetadata = { questionId, pages: answer.pages, contentLevel: answer.contentLevel }
+    await this.chatModel.create({ researchId, sourceId, role: CHAT_ROLE.ASSISTANT, message: answer.answer, metadata })
   }
 
-  /** Newest question first; fetches `limit + 1` so the caller can tell whether another page exists. */
-  async findQuestionsPage(
-    researchId: string,
-    sourceId: string,
-    page: { after: CursorPosition | null; limit: number },
-  ): Promise<SourceQuestionRecord[]> {
+  async findQuestionsPage(researchId: string, sourceId: string, page: { after: CursorPosition | null; limit: number }): Promise<SourceQuestionRecord[]> {
     const conditions: WhereOptions[] = [{ researchId, sourceId, role: CHAT_ROLE.PERSON }]
 
     if (page.after) {
@@ -184,13 +179,16 @@ export class SourcesRepository {
       ],
       limit: page.limit + 1,
     })
+
     if (!questions.length) return []
 
     const replies = await this.chatModel.findAll({
       where: { researchId, sourceId, role: CHAT_ROLE.ASSISTANT, [Op.and]: literal("metadata->>'questionId' in (:questionIds)") },
       replacements: { questionIds: questions.map((question) => question.id) },
     })
+
     const answers = new Map<string, { answer: string; metadata: AnswerMetadata }>()
+
     for (const reply of replies) {
       const parsed = answerMetadataSchema.safeParse(reply.metadata)
       if (parsed.success) answers.set(parsed.data.questionId, { answer: reply.message, metadata: parsed.data })
@@ -209,7 +207,9 @@ export class SourcesRepository {
         status: answered ? SOURCE_QUESTION_STATUS.ANSWERED : questionStatusOf(plain.metadata),
         createdAt: plain.createdAt,
       }
+
     })
+
   }
 
   private toRecord(plain: SourceModel): SourceRecord {

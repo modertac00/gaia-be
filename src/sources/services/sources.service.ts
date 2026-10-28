@@ -1,17 +1,6 @@
-import { randomUUID } from 'node:crypto'
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-  ServiceUnavailableException,
-  UnprocessableEntityException,
-} from '@nestjs/common'
+import { ConflictException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
 import {
   AI_RUN_KIND,
-  AI_RUN_STATUS,
-  AI_SERVICE_UNAVAILABLE_MESSAGE,
   type AskSourceQuestionDto,
   type ClassificationHistoryEntry,
   type ClassifySourceDto,
@@ -31,9 +20,8 @@ import {
   type Source,
   type SourceQuestion,
   type SourceQuestionAccepted,
-  type SourceQuestionAnswer,
 } from '@moderta/api-contracts/gaia'
-import { AI_CLIENT, type AiClient } from '@/ai/interfaces/ai-client.interface'
+import { AiTasks } from '@/ai/ai-tasks.service'
 import { decodeCursor, toRecordPage } from '@/common/database/cursor-pagination'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
 import type { RepositoryOptions } from '@/common/database/repository-options'
@@ -46,13 +34,11 @@ import { toClassificationHistoryEntry, toSource, toSourceQuestion } from '@/sour
 
 @Injectable()
 export class SourcesService {
-  private readonly logger = new Logger(SourcesService.name)
-
   constructor(
     @Inject(SOURCES_REPOSITORY) private readonly repository: SourcesRepository,
     @Inject(TRANSACTION_RUNNER) private readonly transactions: TransactionRunner,
     @Inject(ResearchAccess) private readonly research: ResearchAccess,
-    @Inject(AI_CLIENT) private readonly ai: AiClient,
+    @Inject(AiTasks) private readonly ai: AiTasks,
   ) { }
 
   async list(userId: string, researchId: string, query: ListSourcesQuery): Promise<Source[]> {
@@ -135,24 +121,22 @@ export class SourcesService {
     const source = toSource(await this.findOrThrow(researchId, sourceId))
 
     const questionId = await this.repository.addQuestion(researchId, sourceId, userId, dto.question)
-    const runId = randomUUID()
 
-    let answer: SourceQuestionAnswer
     try {
-      answer = await this.ai.answerSourceQuestion({
-        question: dto.question,
-        source,
-        research: { title: research.title, description: research.description, scopeNotes: research.scopeNotes },
+      const run = await this.ai.send({
+        kind: AI_RUN_KIND.SOURCE_QUESTION,
+        taskId: questionId,
+        input: {
+          question: dto.question,
+          source,
+          research: { title: research.title, description: research.description, scopeNotes: research.scopeNotes },
+        },
       })
+      return { questionId, run }
     } catch (error) {
-      this.logger.error(`Source question ${questionId} failed`, error instanceof Error ? error.stack : String(error))
-      await this.repository.markQuestionFailed(researchId, sourceId, questionId)
-      throw new ServiceUnavailableException(AI_SERVICE_UNAVAILABLE_MESSAGE)
+      await this.repository.failQuestion(questionId)
+      throw error
     }
-
-    await this.repository.addAnswer(researchId, sourceId, { questionId, llmRunId: runId, ...answer })
-
-    return { questionId, run: { id: runId, kind: AI_RUN_KIND.SOURCE_QUESTION, status: AI_RUN_STATUS.SUCCEEDED } }
   }
 
   async questions(
