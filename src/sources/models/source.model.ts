@@ -21,7 +21,6 @@ export class SourceModel extends Model {
   @Column({ type: DataType.UUID, allowNull: false })
   declare researchId: string
 
-  /** Citation number within the research (citation 3, 7, 12). */
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare marker: number
 
@@ -52,7 +51,6 @@ export class SourceModel extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   declare contentSummarization: string | null
 
-  /** Null until a person classifies the source; verification needs a classification first. */
   @Column({ type: DataType.TEXT, allowNull: true, validate: { isIn: [SOURCE_STANCE_VALUES] } })
   declare classificationType: SourceStance | null
 
@@ -74,7 +72,6 @@ export class SourceModel extends Model {
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
   declare includedInResearch: boolean
 
-  /** A user id, or the name of the tool that found the source. */
   @Column({ type: DataType.TEXT, allowNull: false })
   declare createdBy: string
 

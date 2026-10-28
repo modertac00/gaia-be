@@ -9,6 +9,7 @@ import type {
   ResearchChanges,
   ResearchListFilter,
   ResearchRecord,
+  SourceCounterDeltas,
 } from '@/research/interfaces/research-repository.interface'
 import { ResearchSupervisorModel } from '@/research/models/research-supervisor.model'
 import { ResearchModel } from '@/research/models/research.model'
@@ -112,6 +113,19 @@ export class ResearchRepository {
     })
   }
 
+  async adjustSourceCounters(id: string, deltas: SourceCounterDeltas, options: RepositoryOptions = {}): Promise<void> {
+    const changes: Record<string, ReturnType<typeof literal>> = {}
+    // Deltas come from the service, never from a request; Math.trunc keeps the SQL fragment numeric.
+    const clamp = (column: string, delta: number) => literal(`GREATEST("${column}" + ${Math.trunc(delta)}, 0)`)
+
+    if (deltas.verified) changes.verifiedSourceCount = clamp('verified_source_count', deltas.verified)
+    if (deltas.excluded) changes.excluded = clamp('excluded', deltas.excluded)
+    if (deltas.included) changes.included = clamp('included', deltas.included)
+    if (!Object.keys(changes).length) return
+
+    await this.researchModel.update(changes, { where: { id }, transaction: options.transaction })
+  }
+
   private visibleTo(userId: string): WhereOptions {
     return { [Op.or]: [{ createdBy: userId }, { id: { [Op.in]: SUPERVISED_BY_USER } }] }
   }
@@ -151,6 +165,7 @@ export class ResearchRepository {
       pubYearFrom: plain.pubYearFrom,
       pubYearTo: plain.pubYearTo,
       minSources: plain.minSources,
+      verifiedSourceCount: plain.verifiedSourceCount,
       createdBy: plain.createdBy,
       scopeNotes: plain.scopeNotes,
       aiInstructions: plain.aiInstructions,

@@ -10,7 +10,7 @@ export type ResearchRecord = Omit<Research, 'createdAt' | 'updatedAt'> & {
 
 export type NewResearch = Omit<
   ResearchRecord,
-  'id' | 'docKey' | 'approvedByUserId' | 'counts' | 'supervisorIds' | 'createdAt' | 'updatedAt'
+  'id' | 'docKey' | 'approvedByUserId' | 'counts' | 'verifiedSourceCount' | 'supervisorIds' | 'createdAt' | 'updatedAt'
 >
 
 export type ResearchChanges = Partial<
@@ -18,3 +18,10 @@ export type ResearchChanges = Partial<
 >
 
 export type ResearchListFilter = Pick<ListResearchQuery, 'status' | 'researchType' | 'search'>
+
+/** Changes to the research's source counters; negative values decrease them (never below zero). */
+export interface SourceCounterDeltas {
+  verified?: number
+  excluded?: number
+  included?: number
+}
