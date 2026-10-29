@@ -24,14 +24,16 @@ export class AiResponseListener implements OnModuleInit {
       const response = aiTaskResponseSchema.safeParse(message.payload)
       if (!response.success) throw new Error(`Unreadable AI response ${message.messageId}: ${response.error.message}`)
 
-      const { kind, taskId, status, error } = response.data
+      const { kind, taskId, researchId, status, error } = response.data
       const handler = this.handlers.get(kind)
       if (!handler) throw new Error(`No handler is registered for AI tasks of kind "${kind}"`)
 
-      if (status === 'failed') return handler.onFailed(taskId, error ?? { code: 'UNKNOWN', message: 'The AI task failed' })
+      if (status === 'failed') return handler.onFailed(taskId, error ?? { code: 'UNKNOWN', message: 'The AI task failed' }, researchId)
 
       const result = aiResultSchemaByKind[kind].safeParse(response.data.result)
-      if (!result.success) return handler.onFailed(taskId, { code: 'INVALID_RESULT', message: `The result does not match the ${kind} contract` })
+      if (!result.success) {
+        return handler.onFailed(taskId, { code: 'INVALID_RESULT', message: `The result does not match the ${kind} contract` }, researchId)
+      }
 
       return handler.onSucceeded(taskId, result.data)
     })

@@ -5,7 +5,7 @@ import type { AiError, AiResultByKind, AiRunKind } from '@moderta/api-contracts/
 export interface AiResponseHandler<K extends AiRunKind = AiRunKind> {
   readonly kind: K
   onSucceeded(taskId: string, result: AiResultByKind[K]): Promise<void>
-  onFailed(taskId: string, error: AiError): Promise<void>
+  onFailed(taskId: string, error: AiError, researchId?: string): Promise<void>
 }
 
 @Injectable()

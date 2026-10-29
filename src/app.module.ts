@@ -12,6 +12,7 @@ import { SourcesModule } from './research-app/sources/sources.module';
 import { QueueModule } from './queue/queue.module';
 import { AiModule } from './ai/ai.module';
 import { NotesModule } from './research-app/notes/notes.module';
+import { EvidenceModule } from './research-app/evidence/evidence.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotesModule } from './research-app/notes/notes.module';
     AiModule,
     SourcesModule,
     NotesModule,
+    EvidenceModule,
   ],
   controllers: [HealthController],
 })

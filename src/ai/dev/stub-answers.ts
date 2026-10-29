@@ -1,4 +1,8 @@
-import { SOURCE_CONTENT_LEVEL, type SourceQuestionAnswer, type SourceQuestionTaskInput } from '@moderta/api-contracts/gaia'
+import {
+  SOURCE_CONTENT_LEVEL,
+  type SourceQuestionAnswer,
+  type SourceQuestionTaskInput,
+} from '@moderta/api-contracts/gaia'
 
 const ABSTRACT_EXCERPT_MAX = 280
 
