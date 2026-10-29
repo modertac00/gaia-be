@@ -14,6 +14,8 @@ import { AiModule } from './ai/ai.module';
 import { NotesModule } from './research-app/notes/notes.module';
 import { EvidenceModule } from './research-app/evidence/evidence.module';
 import { RelatedModule } from './research-app/related/related.module';
+import { ExportsModule } from './research-app/exports/exports.module';
+import { ResearchLinksModule } from './research-app/research-links/research-links.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { RelatedModule } from './research-app/related/related.module';
     NotesModule,
     EvidenceModule,
     RelatedModule,
+    ExportsModule,
+    ResearchLinksModule,
   ],
   controllers: [HealthController],
 })
