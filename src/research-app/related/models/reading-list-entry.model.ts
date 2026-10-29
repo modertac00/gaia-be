@@ -1,6 +1,6 @@
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, Model, Table } from 'sequelize-typescript'
 import { ResearchModel } from '@/research-app/research/models/research.model'
-import { SourceModel } from './source.model'
+import { SourceModel } from '@/research-app/sources/models/source.model'
 
 @Table({ tableName: 'research_reading_list', underscored: true, timestamps: true, updatedAt: false })
 export class ReadingListEntryModel extends Model {

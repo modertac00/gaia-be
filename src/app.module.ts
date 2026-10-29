@@ -13,6 +13,7 @@ import { QueueModule } from './queue/queue.module';
 import { AiModule } from './ai/ai.module';
 import { NotesModule } from './research-app/notes/notes.module';
 import { EvidenceModule } from './research-app/evidence/evidence.module';
+import { RelatedModule } from './research-app/related/related.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EvidenceModule } from './research-app/evidence/evidence.module';
     SourcesModule,
     NotesModule,
     EvidenceModule,
+    RelatedModule,
   ],
   controllers: [HealthController],
 })
