@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { SequelizeModule } from '@nestjs/sequelize'
+import { AuditModule } from '@/research-app/audit/audit.module'
 import { EvidenceConsensusSynthesisModel } from '@/research-app/evidence/models/evidence-consensus-synthesis.model'
 import { EvidenceRowModel } from '@/research-app/evidence/models/evidence-row.model'
 import { ExportsController } from '@/research-app/exports/exports.controller'
@@ -14,6 +15,7 @@ import { SourceModel } from '@/research-app/sources/models/source.model'
 
 @Module({
   imports: [
+    AuditModule,
     ResearchModule,
     SequelizeModule.forFeature([
       ExportModel,

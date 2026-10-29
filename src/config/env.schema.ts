@@ -27,6 +27,7 @@ export const envSchema = z
     QUEUE_ENDPOINT: blankAsUnset(z.url()),
     AI_TASK_QUEUE_URL: blankAsUnset(z.url()),
     AI_STATUS_QUEUE_URL: blankAsUnset(z.url()),
+    STORAGE_LOCAL_DIR: blankAsUnset(z.string().min(1)),
     QUEUE_CONSUMERS_ENABLED: z
       .enum(['true', 'false'])
       .default('true')
@@ -55,6 +56,7 @@ export const envSchema = z
     ...env,
     FRONTEND_URL: env.FRONTEND_URL ?? DEV_FRONTEND_URL,
     QUEUE_DRIVER: env.QUEUE_DRIVER ?? ('memory' as const),
+    STORAGE_LOCAL_DIR: env.STORAGE_LOCAL_DIR ?? 'storage',
   }))
 
 export type Env = z.infer<typeof envSchema>

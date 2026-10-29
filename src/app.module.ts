@@ -12,10 +12,12 @@ import { SourcesModule } from './research-app/sources/sources.module';
 import { QueueModule } from './queue/queue.module';
 import { AiModule } from './ai/ai.module';
 import { NotesModule } from './research-app/notes/notes.module';
+import { StorageModule } from './storage/storage.module';
 import { EvidenceModule } from './research-app/evidence/evidence.module';
 import { RelatedModule } from './research-app/related/related.module';
 import { ExportsModule } from './research-app/exports/exports.module';
 import { ResearchLinksModule } from './research-app/research-links/research-links.module';
+import { AuditModule } from './research-app/audit/audit.module';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { ResearchLinksModule } from './research-app/research-links/research-link
     LoggerModule,
     DatabaseModule,
     QueueModule,
+    StorageModule,
     CommonModule,
     SupabaseModule,
     AuthModule,
@@ -34,6 +37,7 @@ import { ResearchLinksModule } from './research-app/research-links/research-link
     RelatedModule,
     ExportsModule,
     ResearchLinksModule,
+    AuditModule,
   ],
   controllers: [HealthController],
 })

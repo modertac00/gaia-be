@@ -1,5 +1,9 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import {
+  ACTIVITY_ACTOR_TYPE,
+  ACTIVITY_RESULT,
+  ACTIVITY_TARGET_TYPE,
+  ACTIVITY_TOOL,
   AI_RUN_KIND,
   type AcceptNoteProposalDto,
   CHAT_ROLE,
@@ -27,6 +31,7 @@ import type { RepositoryOptions } from '@/common/database/repository-options'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
 import { ValidationFailedException } from '@/common/http/api-exception'
 import { type ListResult, paginated } from '@/common/http/response-results'
+import { ActivityRecorder } from '@/research-app/audit/services/activity-recorder.service'
 import { NOTES_REPOSITORY, type NoteProposalRecord, type NoteRecord } from '@/research-app/notes/interfaces/notes-repository.interface'
 import { NotesRepository } from '@/research-app/notes/repositories/notes.repository'
 import { toNoteChatMessage, toNoteProposal, toResearchNote } from '@/research-app/notes/utils/note-mapper'
@@ -40,6 +45,7 @@ export class NotesService {
     @Inject(TRANSACTION_RUNNER) private readonly transactions: TransactionRunner,
     @Inject(ResearchAccess) private readonly research: ResearchAccess,
     @Inject(AiTasks) private readonly ai: AiTasks,
+    @Inject(ActivityRecorder) private readonly activity: ActivityRecorder,
   ) { }
 
   async get(userId: string, researchId: string): Promise<ResearchNoteWithProposals> {
@@ -54,13 +60,14 @@ export class NotesService {
 
   updateSection(userId: string, researchId: string, sectionId: string, dto: UpdateNoteSectionDto): Promise<NoteSection> {
     return this.transactions.run(async (options) => {
-      await this.research.assertVisible(userId, researchId, options)
+      const research = await this.research.assertVisible(userId, researchId, options)
       const note = await this.findNoteOrThrow(researchId, options)
 
       const change = updateSectionContent(note.content, sectionId, dto.content, userId, new Date())
       if (!change) throw new NotFoundException(NOTE_SECTION_NOT_FOUND_MESSAGE)
 
       await this.repository.saveNoteContent(note.id, change.note, options)
+      await this.recordSectionActivity(userId, research.id, change.section, `Edited ${change.section.heading}`, options)
       return change.section
     })
   }
@@ -122,7 +129,7 @@ export class NotesService {
 
   acceptProposal(userId: string, researchId: string, proposalId: string, dto: AcceptNoteProposalDto): Promise<NoteProposal> {
     return this.transactions.run(async (options) => {
-      await this.research.assertVisible(userId, researchId, options)
+      const research = await this.research.assertVisible(userId, researchId, options)
       const note = await this.findNoteOrThrow(researchId, options)
       const proposal = await this.findPendingProposalOrThrow(note.id, proposalId, options)
 
@@ -131,6 +138,7 @@ export class NotesService {
 
       await this.repository.saveNoteContent(note.id, change.note, options)
       await this.repository.resolveProposal(proposal.id, NOTE_PROPOSAL_STATUS.ACCEPTED, userId, options)
+      await this.recordSectionActivity(userId, research.id, change.section, `AI proposal applied to ${change.section.heading}`, options)
 
       return toNoteProposal({ ...proposal, status: NOTE_PROPOSAL_STATUS.ACCEPTED, resolvedBy: userId })
     })
@@ -138,11 +146,16 @@ export class NotesService {
 
   discardProposal(userId: string, researchId: string, proposalId: string): Promise<NoteProposal> {
     return this.transactions.run(async (options) => {
-      await this.research.assertVisible(userId, researchId, options)
+      const research = await this.research.assertVisible(userId, researchId, options)
       const note = await this.findNoteOrThrow(researchId, options)
       const proposal = await this.findPendingProposalOrThrow(note.id, proposalId, options)
 
       await this.repository.resolveProposal(proposal.id, NOTE_PROPOSAL_STATUS.DISCARDED, userId, options)
+
+      const section = note.content.sections.find((item) => item.id === proposal.content.sectionId)
+      if (section) {
+        await this.recordSectionActivity(userId, research.id, section, `AI proposal discarded for ${section.heading}`, options)
+      }
 
       return toNoteProposal({ ...proposal, status: NOTE_PROPOSAL_STATUS.DISCARDED, resolvedBy: userId })
     })
@@ -183,6 +196,29 @@ export class NotesService {
       await this.repository.deleteChatMessage(messageId)
       throw error
     }
+  }
+
+  private recordSectionActivity(
+    userId: string,
+    researchId: string,
+    section: NoteSection,
+    action: string,
+    options: RepositoryOptions,
+  ): Promise<void> {
+    return this.activity.record(
+      {
+        researchId,
+        tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
+        action,
+        targetType: ACTIVITY_TARGET_TYPE.NOTE_SECTION,
+        targetId: section.id,
+        targetLabel: section.heading,
+        actorType: ACTIVITY_ACTOR_TYPE.USER,
+        actorUserId: userId,
+        result: ACTIVITY_RESULT.SUCCESS,
+      },
+      options,
+    )
   }
 
   private async findNoteOrThrow(researchId: string, options: RepositoryOptions = {}): Promise<NoteRecord> {

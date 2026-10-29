@@ -1,5 +1,9 @@
 import { ConflictException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
 import {
+  ACTIVITY_ACTOR_TYPE,
+  ACTIVITY_RESULT,
+  ACTIVITY_TARGET_TYPE,
+  ACTIVITY_TOOL,
   AI_RUN_KIND,
   type AskSourceQuestionDto,
   type ClassificationHistoryEntry,
@@ -15,11 +19,13 @@ import {
   SOURCE_NOT_FOUND_MESSAGE,
   SOURCE_RECLASSIFY_REASON_REQUIRED_MESSAGE,
   SOURCE_RESOLUTION,
+  SOURCE_STANCES,
   SOURCE_VERIFY_NEEDS_CLASSIFICATION_MESSAGE,
   SOURCE_VERIFY_NEEDS_RESOLUTION_MESSAGE,
   type Source,
   type SourceQuestion,
   type SourceQuestionAccepted,
+  type SourceStance,
 } from '@moderta/api-contracts/gaia'
 import { AiTasks } from '@/ai/ai-tasks.service'
 import { decodeCursor, toRecordPage } from '@/common/database/cursor-pagination'
@@ -27,10 +33,16 @@ import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/tr
 import type { RepositoryOptions } from '@/common/database/repository-options'
 import { ValidationFailedException } from '@/common/http/api-exception'
 import { type ListResult, paginated } from '@/common/http/response-results'
+import { ActivityRecorder } from '@/research-app/audit/services/activity-recorder.service'
+import type { ResearchRecord } from '@/research-app/research/interfaces/research-repository.interface'
 import { ResearchAccess } from '@/research-app/research/services/research-access.service'
 import { SOURCES_REPOSITORY, type SourceRecord } from '@/research-app/sources/interfaces/sources-repository.interface'
 import { SourcesRepository } from '@/research-app/sources/repositories/sources.repository'
 import { toClassificationHistoryEntry, toSource, toSourceQuestion } from '@/research-app/sources/utils/source-mapper'
+
+function stanceLabel(stance: SourceStance): string {
+  return SOURCE_STANCES.find((item) => item.value === stance)?.label ?? stance
+}
 
 @Injectable()
 export class SourcesService {
@@ -39,6 +51,7 @@ export class SourcesService {
     @Inject(TRANSACTION_RUNNER) private readonly transactions: TransactionRunner,
     @Inject(ResearchAccess) private readonly research: ResearchAccess,
     @Inject(AiTasks) private readonly ai: AiTasks,
+    @Inject(ActivityRecorder) private readonly activity: ActivityRecorder,
   ) { }
 
   async list(userId: string, researchId: string, query: ListSourcesQuery): Promise<Source[]> {
@@ -55,7 +68,7 @@ export class SourcesService {
   }
 
   classify(userId: string, researchId: string, sourceId: string, dto: ClassifySourceDto): Promise<Source> {
-    return this.mutate(userId, researchId, sourceId, async (source, options) => {
+    return this.mutate(userId, researchId, sourceId, async (source, options, research) => {
       this.assertIncluded(source)
 
       if (source.stance === dto.stance) return toSource(source)
@@ -72,12 +85,18 @@ export class SourcesService {
       )
       if (source.isVerified) await this.research.adjustSourceCounters(researchId, { verified: -1 }, options)
 
+      const to = stanceLabel(dto.stance)
+      const action = source.stance
+        ? `Source ${source.marker} reclassified ${stanceLabel(source.stance)} → ${to}`
+        : `Source ${source.marker} classified as ${to}`
+      await this.recordActivity(userId, research, source, action, options, dto.reason)
+
       return toSource(await this.findOrThrow(researchId, sourceId, options))
     })
   }
 
   verify(userId: string, researchId: string, sourceId: string): Promise<Source> {
-    return this.mutate(userId, researchId, sourceId, async (source, options) => {
+    return this.mutate(userId, researchId, sourceId, async (source, options, research) => {
       if (source.isVerified) return toSource(source)
 
       this.assertIncluded(source)
@@ -87,13 +106,14 @@ export class SourcesService {
 
       await this.repository.markVerified(researchId, sourceId, userId, options)
       await this.research.adjustSourceCounters(researchId, { verified: 1 }, options)
+      await this.recordActivity(userId, research, source, `Source ${source.marker} verified`, options)
 
       return toSource(await this.findOrThrow(researchId, sourceId, options))
     })
   }
 
   exclude(userId: string, researchId: string, sourceId: string, dto: ExcludeSourceDto): Promise<Source> {
-    return this.mutate(userId, researchId, sourceId, async (source, options) => {
+    return this.mutate(userId, researchId, sourceId, async (source, options, research) => {
       if (!source.includedInResearch) return toSource(source)
 
       await this.repository.markExcluded(researchId, sourceId, dto.reason ?? null, userId, options)
@@ -102,6 +122,7 @@ export class SourcesService {
         { excluded: 1, included: -1, verified: source.isVerified ? -1 : 0 },
         options,
       )
+      await this.recordActivity(userId, research, source, `Source ${source.marker} excluded`, options, dto.reason)
 
       return toSource(await this.findOrThrow(researchId, sourceId, options))
     })
@@ -160,14 +181,39 @@ export class SourcesService {
     userId: string,
     researchId: string,
     sourceId: string,
-    work: (source: SourceRecord, options: RepositoryOptions) => Promise<T>,
+    work: (source: SourceRecord, options: RepositoryOptions, research: ResearchRecord) => Promise<T>,
   ): Promise<T> {
     return this.transactions.run(async (options) => {
       const research = await this.research.assertVisible(userId, researchId, options)
       if (research.status === RESEARCH_STATUS.VERIFIED) throw new ConflictException(SOURCE_LOCKED_MESSAGE)
 
-      return work(await this.findOrThrow(researchId, sourceId, options), options)
+      return work(await this.findOrThrow(researchId, sourceId, options), options, research)
     })
+  }
+
+  private recordActivity(
+    userId: string,
+    research: ResearchRecord,
+    source: SourceRecord,
+    action: string,
+    options: RepositoryOptions,
+    reason?: string,
+  ): Promise<void> {
+    return this.activity.record(
+      {
+        researchId: research.id,
+        tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
+        action,
+        targetType: ACTIVITY_TARGET_TYPE.SOURCE,
+        targetId: source.id,
+        targetLabel: `${research.docKey} · source ${source.marker}`,
+        actorType: ACTIVITY_ACTOR_TYPE.USER,
+        actorUserId: userId,
+        result: ACTIVITY_RESULT.SUCCESS,
+        reason,
+      },
+      options,
+    )
   }
 
   private async findOrThrow(researchId: string, sourceId: string, options: RepositoryOptions = {}): Promise<SourceRecord> {
