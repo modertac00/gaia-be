@@ -1,6 +1,6 @@
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common'
 import { type ConfigType } from '@nestjs/config'
-import { AI_MESSAGE_TYPE, AI_QUEUE_CHANNEL, aiTaskPayloadSchema } from '@moderta/api-contracts/gaia'
+import { AI_MESSAGE_TYPE, AI_QUEUE_CHANNEL, AI_RUN_KIND, aiTaskPayloadSchema } from '@moderta/api-contracts/gaia'
 import type { MessageBus } from '@moderta/api-contracts/queue'
 import { queueConfig } from '@/config'
 import { stubSourceAnswer } from '@/ai/dev/stub-answers'
@@ -24,6 +24,11 @@ export class StubAiWorker implements OnModuleInit {
     this.logger.warn('AI service is not connected: AI tasks are answered by a stub worker', StubAiWorker.name)
     this.bus.subscribe(AI_QUEUE_CHANNEL.TASKS, async (message) => {
       const task = aiTaskPayloadSchema.parse(message.payload)
+
+      if (task.kind !== AI_RUN_KIND.SOURCE_QUESTION) {
+        this.logger.warn(`The stub worker does not answer "${task.kind}" tasks`, StubAiWorker.name)
+        return
+      }
 
       await sleep(ANSWER_DELAY_MS)
       await this.bus.publish(AI_QUEUE_CHANNEL.STATUS, {
