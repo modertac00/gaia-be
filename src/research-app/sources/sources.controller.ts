@@ -22,7 +22,7 @@ import {
 import { CurrentUser } from '@/common/auth'
 import type { ListResult } from '@/common/http/response-results'
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe'
-import { SourcesService } from '@/sources/services/sources.service'
+import { SourcesService } from '@/research-app/sources/services/sources.service'
 import {
   ApiAskSourceQuestion,
   ApiClassifySource,

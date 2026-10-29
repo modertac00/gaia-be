@@ -1,7 +1,7 @@
 import { SOURCE_STANCE_VALUES, type SourceStance } from '@moderta/api-contracts/gaia'
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, Model, Table } from 'sequelize-typescript'
 import { SourceModel } from './source.model'
-import { ResearchModel } from '@/research/models/research.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 
 @Table({ tableName: 'source_classification_history', underscored: true, timestamps: true, updatedAt: false })
 export class SourceClassificationHistoryModel extends Model {

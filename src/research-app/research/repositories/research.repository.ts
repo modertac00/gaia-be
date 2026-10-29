@@ -10,9 +10,9 @@ import type {
   ResearchListFilter,
   ResearchRecord,
   SourceCounterDeltas,
-} from '@/research/interfaces/research-repository.interface'
-import { ResearchSupervisorModel } from '@/research/models/research-supervisor.model'
-import { ResearchModel } from '@/research/models/research.model'
+} from '@/research-app/research/interfaces/research-repository.interface'
+import { ResearchSupervisorModel } from '@/research-app/research/models/research-supervisor.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 
 const LIST_ORDER: Order = [
   ['createdAt', 'DESC'],

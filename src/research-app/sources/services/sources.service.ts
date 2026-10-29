@@ -27,10 +27,10 @@ import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/tr
 import type { RepositoryOptions } from '@/common/database/repository-options'
 import { ValidationFailedException } from '@/common/http/api-exception'
 import { type ListResult, paginated } from '@/common/http/response-results'
-import { ResearchAccess } from '@/research/services/research-access.service'
-import { SOURCES_REPOSITORY, type SourceRecord } from '@/sources/interfaces/sources-repository.interface'
-import { SourcesRepository } from '@/sources/repositories/sources.repository'
-import { toClassificationHistoryEntry, toSource, toSourceQuestion } from '@/sources/utils/source-mapper'
+import { ResearchAccess } from '@/research-app/research/services/research-access.service'
+import { SOURCES_REPOSITORY, type SourceRecord } from '@/research-app/sources/interfaces/sources-repository.interface'
+import { SourcesRepository } from '@/research-app/sources/repositories/sources.repository'
+import { toClassificationHistoryEntry, toSource, toSourceQuestion } from '@/research-app/sources/utils/source-mapper'
 
 @Injectable()
 export class SourcesService {

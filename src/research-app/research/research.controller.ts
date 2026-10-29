@@ -13,7 +13,7 @@ import {
 import { CurrentUser } from '@/common/auth'
 import type { ListResult } from '@/common/http/response-results'
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe'
-import { ResearchService } from '@/research/services/research.service'
+import { ResearchService } from '@/research-app/research/services/research.service'
 import { ApiCreateResearch, ApiGetResearch, ApiListResearch, ApiResearchController, ApiUpdateResearch } from './research.swagger'
 
 @ApiResearchController()

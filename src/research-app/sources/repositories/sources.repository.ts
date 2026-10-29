@@ -19,11 +19,11 @@ import type {
   SourceListFilter,
   SourceQuestionRecord,
   SourceRecord,
-} from '@/sources/interfaces/sources-repository.interface'
-import { SourceChatModel } from '@/sources/models/source-chat.model'
-import { SourceClassificationHistoryModel } from '@/sources/models/source-classification-history.model'
-import { SourceScreeningModel } from '@/sources/models/source-screening.model'
-import { SourceModel } from '@/sources/models/source.model'
+} from '@/research-app/sources/interfaces/sources-repository.interface'
+import { SourceChatModel } from '@/research-app/sources/models/source-chat.model'
+import { SourceClassificationHistoryModel } from '@/research-app/sources/models/source-classification-history.model'
+import { SourceScreeningModel } from '@/research-app/sources/models/source-screening.model'
+import { SourceModel } from '@/research-app/sources/models/source.model'
 
 const answerMetadataSchema = z.object({
   questionId: z.uuid(),

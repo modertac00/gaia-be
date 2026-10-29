@@ -7,8 +7,8 @@ import { DatabaseModule } from './database/database.module'
 import { HealthController } from './health.controller'
 import { AuthModule } from './auth/auth.module'
 import { SupabaseModule } from './supabase/supabase.module'
-import { ResearchModule } from './research/research.module';
-import { SourcesModule } from './sources/sources.module';
+import { ResearchModule } from './research-app/research/research.module';
+import { SourcesModule } from './research-app/sources/sources.module';
 import { QueueModule } from './queue/queue.module';
 import { AiModule } from './ai/ai.module';
 

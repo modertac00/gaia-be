@@ -1,6 +1,6 @@
 import { SOURCE_LINK_KIND_VALUES, type SourceLinkKind } from '@moderta/api-contracts/gaia'
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, Model, Table } from 'sequelize-typescript'
-import { ResearchModel } from '@/research/models/research.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 import { SourceModel } from './source.model'
 
 @Table({ tableName: 'source_links', underscored: true, timestamps: true, updatedAt: false })

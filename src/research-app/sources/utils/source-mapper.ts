@@ -1,5 +1,5 @@
 import type { ClassificationHistoryEntry, Source, SourceQuestion } from '@moderta/api-contracts/gaia'
-import type { ClassificationHistoryRecord, SourceQuestionRecord, SourceRecord } from '@/sources/interfaces/sources-repository.interface'
+import type { ClassificationHistoryRecord, SourceQuestionRecord, SourceRecord } from '@/research-app/sources/interfaces/sources-repository.interface'
 
 export function toSource(record: SourceRecord): Source {
   return {

@@ -21,9 +21,9 @@ import { decodeCursor, toRecordPage } from '@/common/database/cursor-pagination'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
 import { ValidationFailedException } from '@/common/http/api-exception'
 import { ListResult, paginated } from '@/common/http/response-results'
-import { RESEARCH_REPOSITORY } from '@/research/interfaces/research-repository.interface'
-import { toResearch } from '@/research/utils/research-mapper'
-import { ResearchRepository } from '@/research/repositories/research.repository'
+import { RESEARCH_REPOSITORY } from '@/research-app/research/interfaces/research-repository.interface'
+import { toResearch } from '@/research-app/research/utils/research-mapper'
+import { ResearchRepository } from '@/research-app/research/repositories/research.repository'
 
 @Injectable()
 export class ResearchService {

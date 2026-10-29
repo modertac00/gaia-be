@@ -1,9 +1,10 @@
+import { SCREENING_STAGE_VALUES, type ScreeningStage } from '@moderta/api-contracts/gaia'
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, Model, Table } from 'sequelize-typescript'
-import { ResearchModel } from '@/research/models/research.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 import { SourceModel } from './source.model'
 
-@Table({ tableName: 'research_reading_list', underscored: true, timestamps: true, updatedAt: false })
-export class ReadingListEntryModel extends Model {
+@Table({ tableName: 'source_screening', underscored: true, timestamps: true, updatedAt: false })
+export class SourceScreeningModel extends Model {
   @Column({ type: DataType.UUID, primaryKey: true, defaultValue: DataType.UUIDV4, allowNull: false })
   declare id: string
 
@@ -15,8 +16,14 @@ export class ReadingListEntryModel extends Model {
   @Column({ type: DataType.UUID, allowNull: false })
   declare sourceId: string
 
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare rank: number
+  @Column({ type: DataType.TEXT, allowNull: false, validate: { isIn: [SCREENING_STAGE_VALUES] } })
+  declare stage: ScreeningStage
+
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare exclusionReason: string | null
+
+  @Column({ type: DataType.TEXT, allowNull: false })
+  declare decidedBy: string
 
   @CreatedAt
   declare createdAt: Date

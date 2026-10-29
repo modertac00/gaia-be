@@ -7,7 +7,7 @@ import {
   type SourceTier,
 } from '@moderta/api-contracts/gaia'
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, HasMany, HasOne, Model, Table, UpdatedAt } from 'sequelize-typescript'
-import { ResearchModel } from '@/research/models/research.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 import { SourceChatModel } from './source-chat.model'
 import { SourceClassificationHistoryModel } from './source-classification-history.model'
 import { SourceScreeningModel } from './source-screening.model'

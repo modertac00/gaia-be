@@ -1,8 +1,8 @@
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common'
 import { AI_RUN_KIND, type SourceQuestionAnswer } from '@moderta/api-contracts/gaia'
 import { AiHandlers, type AiResponseHandler } from '@/ai/ai-handlers'
-import { SOURCES_REPOSITORY } from '@/sources/interfaces/sources-repository.interface'
-import { SourcesRepository } from '@/sources/repositories/sources.repository'
+import { SOURCES_REPOSITORY } from '@/research-app/sources/interfaces/sources-repository.interface'
+import { SourcesRepository } from '@/research-app/sources/repositories/sources.repository'
 
 @Injectable()
 export class SourceQuestionHandler implements AiResponseHandler<typeof AI_RUN_KIND.SOURCE_QUESTION>, OnModuleInit {

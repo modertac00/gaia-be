@@ -1,7 +1,7 @@
 import { CHAT_ROLE_VALUES, type ChatRole } from '@moderta/api-contracts/gaia'
 import { BelongsTo, Column, CreatedAt, DataType, ForeignKey, Model, Table } from 'sequelize-typescript'
 import { SourceModel } from './source.model'
-import { ResearchModel } from '@/research/models/research.model'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 
 @Table({ tableName: 'source_chats', underscored: true, timestamps: true, updatedAt: false })
 export class SourceChatModel extends Model {
