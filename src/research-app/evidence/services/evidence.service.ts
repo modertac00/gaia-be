@@ -54,6 +54,7 @@ export class EvidenceService {
       if (!record) {
         throw new NotFoundException(EVIDENCE_NOT_FOUND_MESSAGE)
       }
+
       if (!wasReviewed) {
         throw new ConflictException(EVIDENCE_ALREADY_REVIEWED_MESSAGE)
       }

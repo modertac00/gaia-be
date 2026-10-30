@@ -10,6 +10,7 @@ import {
 } from '@moderta/api-contracts/gaia'
 import type { MessageBus } from '@moderta/api-contracts/queue'
 import { AppLogger } from '@/log'
+import { AiRuns } from '@/ai/runs/ai-runs.service'
 import { MESSAGE_BUS } from '@/queue/queue.constants'
 
 const CONTEXT = 'AiTasks'
@@ -19,9 +20,10 @@ export class AiTasks {
   constructor(
     @Inject(MESSAGE_BUS) private readonly bus: MessageBus,
     @Inject(AppLogger) private readonly logger: AppLogger,
+    @Inject(AiRuns) private readonly runs: AiRuns,
   ) { }
 
-  async send(task: AiTaskPayload): Promise<AiRunRef> {
+  async send(task: AiTaskPayload, researchId?: string): Promise<AiRunRef> {
     const payload = aiTaskPayloadSchema.parse(task)
 
     try {
@@ -29,6 +31,13 @@ export class AiTasks {
     } catch (error) {
       this.logger.error(`Could not send AI task ${payload.taskId}: ${String(error)}`, error instanceof Error ? error.stack : undefined, CONTEXT)
       throw new ServiceUnavailableException(AI_SERVICE_UNAVAILABLE_MESSAGE)
+    }
+
+    const runResearchId = researchId ?? ('researchId' in payload.input ? payload.input.researchId : undefined)
+    if (runResearchId) {
+      await this.runs.recordQueued(runResearchId, payload)
+    } else {
+      this.logger.warn(`AI task ${payload.taskId} (${payload.kind}) was not logged: no researchId`, CONTEXT)
     }
 
     return { id: payload.taskId, kind: payload.kind, status: AI_RUN_STATUS.QUEUED }
