@@ -5,6 +5,7 @@ import type { MessageBus } from '@moderta/api-contracts/queue'
 import { queueConfig } from '@/config'
 import { AiHandlers } from '@/ai/ai-handlers'
 import { AiRuns } from '@/ai/runs/ai-runs.service'
+import { KINDS_WITHOUT_RESEARCH } from '@/ai/runs/run-resources'
 import { MESSAGE_BUS } from '@/queue/queue.constants'
 
 
@@ -30,10 +31,13 @@ export class AiResponseListener implements OnModuleInit {
       const handler = this.handlers.get(kind)
       if (!handler) throw new Error(`No handler is registered for AI tasks of kind "${kind}"`)
 
+      // These kinds have no research to log the run against or to notify.
+      const logRun = !KINDS_WITHOUT_RESEARCH.has(kind)
+
       if (status === 'failed') {
         const failure = error ?? { code: 'UNKNOWN', message: 'The AI task failed' }
         await handler.onFailed(taskId, failure, researchId)
-        await this.runs.recordFailed(taskId, kind, researchId, failure)
+        if (logRun) await this.runs.recordFailed(taskId, kind, researchId, failure)
         return
       }
 
@@ -41,12 +45,12 @@ export class AiResponseListener implements OnModuleInit {
       if (!result.success) {
         const failure = { code: 'INVALID_RESULT', message: `The result does not match the ${kind} contract` }
         await handler.onFailed(taskId, failure, researchId)
-        await this.runs.recordFailed(taskId, kind, researchId, failure)
+        if (logRun) await this.runs.recordFailed(taskId, kind, researchId, failure)
         return
       }
 
       await handler.onSucceeded(taskId, result.data)
-      await this.runs.recordSucceeded(taskId, kind, researchId ?? this.findResearchId(result.data), result.data)
+      if (logRun) await this.runs.recordSucceeded(taskId, kind, researchId ?? this.findResearchId(result.data), result.data)
     })
   }
 

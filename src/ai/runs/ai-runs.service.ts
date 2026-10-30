@@ -86,8 +86,9 @@ export class AiRuns {
     try {
       this.events.aiStatus({ researchId, runId: run.taskId, kind: run.kind, status: run.status, error: run.error })
 
-      if (run.status === AI_RUN_STATUS.SUCCEEDED) {
-        this.events.dataChanged({ researchId, resource: RUN_RESOURCES[run.kind] })
+      const resource = RUN_RESOURCES[run.kind]
+      if (run.status === AI_RUN_STATUS.SUCCEEDED && resource) {
+        this.events.dataChanged({ researchId, resource })
       }
       this.events.dataChanged({ researchId, resource: REALTIME_RESOURCE.RUNS })
     } catch (error) {

@@ -20,6 +20,7 @@ import { ResearchLinksModule } from './research-app/research-links/research-link
 import { AuditModule } from './research-app/audit/audit.module';
 import { AiRunsModule } from './research-app/ai-runs/ai-runs.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { ClarificationsModule } from './research-app/clarifications/clarifications.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { RealtimeModule } from './realtime/realtime.module';
     CommonModule,
     SupabaseModule,
     AuthModule,
+    ClarificationsModule,
     ResearchModule,
     AiModule,
     SourcesModule,

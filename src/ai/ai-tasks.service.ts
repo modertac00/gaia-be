@@ -11,6 +11,7 @@ import {
 import type { MessageBus } from '@moderta/api-contracts/queue'
 import { AppLogger } from '@/log'
 import { AiRuns } from '@/ai/runs/ai-runs.service'
+import { KINDS_WITHOUT_RESEARCH } from '@/ai/runs/run-resources'
 import { MESSAGE_BUS } from '@/queue/queue.constants'
 
 const CONTEXT = 'AiTasks'
@@ -32,6 +33,8 @@ export class AiTasks {
       this.logger.error(`Could not send AI task ${payload.taskId}: ${String(error)}`, error instanceof Error ? error.stack : undefined, CONTEXT)
       throw new ServiceUnavailableException(AI_SERVICE_UNAVAILABLE_MESSAGE)
     }
+
+    if (KINDS_WITHOUT_RESEARCH.has(payload.kind)) return { id: payload.taskId, kind: payload.kind, status: AI_RUN_STATUS.QUEUED }
 
     const runResearchId = researchId ?? ('researchId' in payload.input ? payload.input.researchId : undefined)
     if (runResearchId) {

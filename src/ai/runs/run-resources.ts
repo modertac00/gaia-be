@@ -1,6 +1,9 @@
 import { AI_RUN_KIND, REALTIME_RESOURCE, type AiRunKind, type RealtimeResource } from '@moderta/api-contracts/gaia'
 
-export const RUN_RESOURCES: Record<AiRunKind, RealtimeResource> = {
+// Kinds that run before a research exists: they are neither logged in llm_runs nor announced in realtime.
+export const KINDS_WITHOUT_RESEARCH: ReadonlySet<AiRunKind> = new Set([AI_RUN_KIND.CLARIFICATION])
+
+export const RUN_RESOURCES: Partial<Record<AiRunKind, RealtimeResource>> = {
   [AI_RUN_KIND.RESEARCH_CREATED]: REALTIME_RESOURCE.RESEARCH,
   [AI_RUN_KIND.SOURCE_QUESTION]: REALTIME_RESOURCE.SOURCES,
   [AI_RUN_KIND.RELATED_PAPERS]: REALTIME_RESOURCE.SOURCES,
