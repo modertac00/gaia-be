@@ -46,6 +46,18 @@ Errors: `{ "success": false, "statusCode": 400, "message": "...", "errors"?: { f
 
 Request and response shapes come from `@moderta/api-contracts/gaia`. The reset link sent by Supabase points to `FRONTEND_URL/auth/reset-password`.
 
+## Realtime
+
+The socket only notifies; refetch data through the REST endpoints.
+
+```ts
+const socket = io(apiUrl, { auth: { token: accessToken } })   // invalid token: disconnected
+socket.emit('research.subscribe', { researchId })              // ack { ok: true } or { ok: false, message }
+socket.on('ai.status', (e) => {})      // { researchId, runId, kind, status, error }
+socket.on('data.changed', (e) => {})   // { researchId, resource } -> refetch that resource
+socket.emit('research.unsubscribe', { researchId })
+```
+
 ## Docker
 
 ```bash

@@ -5,6 +5,7 @@ import { AppModule } from './app.module'
 import { appConfig } from './config'
 import { REQUEST_ID_HEADER } from '@/common/http/request-id'
 import { setupSwagger } from '@/common/swagger'
+import { CorsIoAdapter } from '@/realtime/cors-io.adapter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -13,6 +14,8 @@ async function bootstrap() {
   const config = app.get<ConfigType<typeof appConfig>>(appConfig.KEY)
 
   app.enableCors({ origin: config.frontendOrigin, credentials: false, exposedHeaders: [REQUEST_ID_HEADER] })
+
+  app.useWebSocketAdapter(new CorsIoAdapter(app, config.frontendOrigin))
 
   setupSwagger(app)
 

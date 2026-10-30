@@ -19,6 +19,7 @@ import { ExportsModule } from './research-app/exports/exports.module';
 import { ResearchLinksModule } from './research-app/research-links/research-links.module';
 import { AuditModule } from './research-app/audit/audit.module';
 import { AiRunsModule } from './research-app/ai-runs/ai-runs.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AiRunsModule } from './research-app/ai-runs/ai-runs.module';
     ResearchLinksModule,
     AuditModule,
     AiRunsModule,
+    RealtimeModule,
   ],
   controllers: [HealthController],
 })

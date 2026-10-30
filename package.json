@@ -20,8 +20,10 @@
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.2.8",
     "@nestjs/sequelize": "^11.0.1",
     "@nestjs/swagger": "^11.4.7",
+    "@nestjs/websockets": "^11.2.8",
     "@supabase/supabase-js": "^2.118.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^18.0.9",
@@ -30,6 +32,7 @@
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.8",
     "sequelize-typescript": "^2.1.6",
+    "socket.io": "^4.8.4",
     "umzug": "^3.8.3",
     "zod": "^4.6.7"
   },
