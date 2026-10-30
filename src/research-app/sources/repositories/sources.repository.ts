@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize'
 import {
   CHAT_ROLE,
   SCREENING_STAGE,
+  SOURCE_RESOLUTION,
   SOURCE_QUESTION_STATUS,
   sourceContentLevelSchema,
   type SourceQuestionAnswer,
@@ -14,16 +15,19 @@ import { z } from 'zod'
 import type { CursorPosition } from '@/common/database/cursor-pagination'
 import type { RepositoryOptions } from '@/common/database/repository-options'
 import type {
+  AiPaper,
   ClassificationHistoryRecord,
   NewClassificationEntry,
   SourceListFilter,
   SourceQuestionRecord,
   SourceRecord,
 } from '@/research-app/sources/interfaces/sources-repository.interface'
+import { ResearchModel } from '@/research-app/research/models/research.model'
 import { SourceChatModel } from '@/research-app/sources/models/source-chat.model'
 import { SourceClassificationHistoryModel } from '@/research-app/sources/models/source-classification-history.model'
 import { SourceScreeningModel } from '@/research-app/sources/models/source-screening.model'
 import { SourceModel } from '@/research-app/sources/models/source.model'
+import { toPageNumbers } from '@/research-app/sources/utils/page-numbers'
 
 const answerMetadataSchema = z.object({
   questionId: z.uuid(),
@@ -42,6 +46,7 @@ export class SourcesRepository {
     @InjectModel(SourceClassificationHistoryModel) private readonly historyModel: typeof SourceClassificationHistoryModel,
     @InjectModel(SourceScreeningModel) private readonly screeningModel: typeof SourceScreeningModel,
     @InjectModel(SourceChatModel) private readonly chatModel: typeof SourceChatModel,
+    @InjectModel(ResearchModel) private readonly researchModel: typeof ResearchModel,
   ) { }
 
   async findAll(researchId: string, filter: SourceListFilter): Promise<SourceRecord[]> {
@@ -105,6 +110,63 @@ export class SourcesRepository {
     else await this.screeningModel.create({ researchId, sourceId, ...decision }, { transaction: options.transaction })
   }
 
+  /**
+   * Read-only on the research table: locks the research row until the transaction ends, so two deliveries
+   * of the same AI result run one after the other. Returns who created the research, or null when it does not exist.
+   */
+  async lockResearchCreator(researchId: string, options: RepositoryOptions = {}): Promise<string | null> {
+    const research = await this.researchModel.findByPk(researchId, {
+      attributes: ['id', 'createdBy'],
+      transaction: options.transaction,
+      lock: options.transaction ? options.transaction.LOCK.UPDATE : undefined,
+    })
+    return research ? research.createdBy : null
+  }
+
+  /**
+   * Creates the source for an AI-selected paper, or refreshes its descriptive fields when it already exists.
+   * An existing source keeps its classification, verification, summary, resolution and inclusion.
+   */
+  async saveAiPaper(researchId: string, paper: AiPaper, createdBy: string, options: RepositoryOptions = {}): Promise<void> {
+    const { id, ...descriptive } = paper
+
+    const existing = await this.sourceModel.findByPk(id, { transaction: options.transaction })
+    if (existing) {
+      await existing.update({ researchId, ...descriptive }, { transaction: options.transaction })
+      return
+    }
+
+    await this.sourceModel.create(
+      {
+        id,
+        researchId,
+        ...descriptive,
+        includedInResearch: true,
+        isVerified: false,
+        resolution: SOURCE_RESOLUTION.PENDING,
+        createdBy,
+      },
+      { transaction: options.transaction },
+    )
+  }
+
+  /** Marks the source resolved and stores the AI summary when there is one. Returns false when the source does not exist. */
+  async saveDocumentReady(researchId: string, sourceId: string, summary: string | null): Promise<boolean> {
+    const values: Partial<SourceModel> = { resolution: SOURCE_RESOLUTION.RESOLVED }
+    if (summary !== null) values.contentSummarization = summary
+
+    const [count] = await this.sourceModel.update(values, { where: { id: sourceId, researchId } })
+    return count > 0
+  }
+
+  /** Sets the AI's stance only while the source has none, so a person's classification is never replaced. */
+  async saveAiStance(researchId: string, sourceId: string, stance: SourceStance): Promise<void> {
+    await this.sourceModel.update(
+      { classificationType: stance },
+      { where: { id: sourceId, researchId, classificationType: null } },
+    )
+  }
+
   async findClassificationHistory(researchId: string, sourceId: string): Promise<ClassificationHistoryRecord[]> {
     const rows = await this.historyModel.findAll({
       where: { researchId, sourceId },
@@ -159,7 +221,7 @@ export class SourcesRepository {
     })
     if (existing) return
 
-    const metadata: AnswerMetadata = { questionId, pages: answer.pages, contentLevel: answer.contentLevel }
+    const metadata: AnswerMetadata = { questionId, pages: toPageNumbers(answer.pages), contentLevel: answer.contentLevel }
     await this.chatModel.create({ researchId, sourceId, role: CHAT_ROLE.ASSISTANT, message: answer.answer, metadata })
   }
 

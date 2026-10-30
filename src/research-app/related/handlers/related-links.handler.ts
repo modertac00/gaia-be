@@ -1,5 +1,5 @@
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common'
-import { AI_RUN_KIND, type AiError, type RelatedPapersResult } from '@moderta/api-contracts/gaia'
+import { AI_RUN_KIND, type AiError, type RelatedLinksResult } from '@moderta/api-contracts/gaia'
 import { AiHandlers, type AiResponseHandler } from '@/ai/ai-handlers'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
 import { AppLogger } from '@/log'
@@ -7,8 +7,8 @@ import { RELATED_REPOSITORY } from '@/research-app/related/interfaces/related-re
 import { RelatedRepository } from '@/research-app/related/repositories/related.repository'
 
 @Injectable()
-export class RelatedPapersHandler implements AiResponseHandler<typeof AI_RUN_KIND.RELATED_PAPERS>, OnModuleInit {
-  readonly kind = AI_RUN_KIND.RELATED_PAPERS
+export class RelatedLinksHandler implements AiResponseHandler<typeof AI_RUN_KIND.RELATED_LINKS>, OnModuleInit {
+  readonly kind = AI_RUN_KIND.RELATED_LINKS
 
   constructor(
     @Inject(AiHandlers) private readonly handlers: AiHandlers,
@@ -21,30 +21,30 @@ export class RelatedPapersHandler implements AiResponseHandler<typeof AI_RUN_KIN
     this.handlers.register(this)
   }
 
-  onSucceeded(taskId: string, result: RelatedPapersResult): Promise<void> {
+  onSucceeded(taskId: string, result: RelatedLinksResult): Promise<void> {
     return this.transactions.run(async (options) => {
       const { researchId } = result
 
       const researchExists = await this.repository.lockResearch(researchId, options)
       if (!researchExists) {
-        this.logger.warn(`Related papers run ${taskId} is for unknown research ${researchId}`, RelatedPapersHandler.name)
+        this.logger.warn(`Related links run ${taskId} is for unknown research ${researchId}`, RelatedLinksHandler.name)
         return
       }
 
       const sourceIds = await this.repository.findResearchSourceIds(researchId, options)
 
-      const links: RelatedPapersResult['links'] = []
+      const links: RelatedLinksResult['links'] = []
       for (const link of result.links) {
 
         if (link.fromSourceId === link.toSourceId) {
-          this.logger.warn(`Related papers run ${taskId} returned a link from a source to itself`, RelatedPapersHandler.name)
+          this.logger.warn(`Related links run ${taskId} returned a link from a source to itself`, RelatedLinksHandler.name)
           continue
         }
 
         if (!sourceIds.includes(link.fromSourceId) || !sourceIds.includes(link.toSourceId)) {
           this.logger.warn(
-            `Related papers run ${taskId} returned a link with a source that is not in research ${researchId}`,
-            RelatedPapersHandler.name,
+            `Related links run ${taskId} returned a link with a source that is not in research ${researchId}`,
+            RelatedLinksHandler.name,
           )
           continue
         }
@@ -52,13 +52,13 @@ export class RelatedPapersHandler implements AiResponseHandler<typeof AI_RUN_KIN
         links.push(link)
       }
 
-      const readingList: RelatedPapersResult['readingList'] = []
+      const readingList: RelatedLinksResult['readingList'] = []
 
       for (const entry of result.readingList) {
         if (!sourceIds.includes(entry.sourceId)) {
           this.logger.warn(
-            `Related papers run ${taskId} returned source ${entry.sourceId}, which is not in research ${researchId}`,
-            RelatedPapersHandler.name,
+            `Related links run ${taskId} returned source ${entry.sourceId}, which is not in research ${researchId}`,
+            RelatedLinksHandler.name,
           )
           continue
         }
@@ -73,7 +73,7 @@ export class RelatedPapersHandler implements AiResponseHandler<typeof AI_RUN_KIN
 
   onFailed(taskId: string, error: AiError, researchId?: string): Promise<void> {
     const researchLabel = researchId ? researchId : 'unknown'
-    this.logger.warn(`Related papers run ${taskId} failed (${error.code}) for research ${researchLabel}`, RelatedPapersHandler.name)
+    this.logger.warn(`Related links run ${taskId} failed (${error.code}) for research ${researchLabel}`, RelatedLinksHandler.name)
     return Promise.resolve()
   }
 

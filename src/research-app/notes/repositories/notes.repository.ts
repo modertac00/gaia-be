@@ -2,16 +2,19 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import {
   CHAT_ROLE,
+  EVIDENCE_REVIEW,
+  EVIDENCE_STATUS,
   NOTE_PROPOSAL_STATUS,
   type NoteContent,
   type NoteProposalContent,
   type NoteProposalStatus,
   type NoteSectionEditResult,
-  type NoteTaskSource,
+  type NoteSectionEditTaskInput,
 } from '@moderta/api-contracts/gaia'
 import { Op, type WhereOptions } from 'sequelize'
 import type { CursorPosition } from '@/common/database/cursor-pagination'
 import type { RepositoryOptions } from '@/common/database/repository-options'
+import { EvidenceRowModel } from '@/research-app/evidence/models/evidence-row.model'
 import type {
   NewNoteChatMessage,
   NoteChatRecord,
@@ -30,13 +33,21 @@ export class NotesRepository {
     @InjectModel(ResearchNoteAiProposalModel) private readonly proposalModel: typeof ResearchNoteAiProposalModel,
     @InjectModel(ResearchNoteChatModel) private readonly chatModel: typeof ResearchNoteChatModel,
     @InjectModel(SourceModel) private readonly sourceModel: typeof SourceModel,
+    @InjectModel(EvidenceRowModel) private readonly evidenceModel: typeof EvidenceRowModel,
   ) { }
 
-  /** The note with the highest version; locked for update inside a transaction. */
   async findLatestNote(researchId: string, options: RepositoryOptions = {}): Promise<NoteRecord | null> {
     const row = await this.noteModel.findOne({
       where: { researchId },
       order: [['version', 'DESC']],
+      transaction: options.transaction,
+      lock: options.transaction ? options.transaction.LOCK.UPDATE : undefined,
+    })
+    return row ? this.toNoteRecord(row.get({ plain: true })) : null
+  }
+
+  async findNoteById(noteId: string, options: RepositoryOptions = {}): Promise<NoteRecord | null> {
+    const row = await this.noteModel.findByPk(noteId, {
       transaction: options.transaction,
       lock: options.transaction ? options.transaction.LOCK.UPDATE : undefined,
     })
@@ -79,7 +90,6 @@ export class NotesRepository {
     await this.proposalModel.update({ runId }, { where: { id: proposalId } })
   }
 
-  /** Only a pending proposal can be resolved; returns false when it was not pending. */
   async resolveProposal(
     proposalId: string,
     status: NoteProposalStatus,
@@ -93,12 +103,19 @@ export class NotesRepository {
     return count > 0
   }
 
-  /** Writes the AI result into a still-pending proposal, keeping its target section. */
   async fillProposal(proposalId: string, result: NoteSectionEditResult): Promise<void> {
     const row = await this.proposalModel.findOne({ where: { id: proposalId, status: NOTE_PROPOSAL_STATUS.PENDING } })
     if (!row) return
 
-    await row.update({ contentJson: { ...result, sectionId: row.contentJson.sectionId } })
+    await row.update({
+      contentJson: {
+        sectionId: row.contentJson.sectionId,
+        content: result.content,
+        citations: result.citations,
+        unsupported: result.unsupported,
+        note: result.assistantMessage,
+      },
+    })
   }
 
   async addChatMessage(message: NewNoteChatMessage, options: RepositoryOptions = {}): Promise<string> {
@@ -160,19 +177,43 @@ export class NotesRepository {
     return rows.map((row) => this.toChatRecord(row.get({ plain: true })))
   }
 
-  async findIncludedSources(researchId: string): Promise<NoteTaskSource[]> {
+  async findIncludedSources(researchId: string): Promise<NoteSectionEditTaskInput['sources']> {
     const rows = await this.sourceModel.findAll({
-      attributes: ['id', 'title', 'authors', 'doi', 'publicationYear'],
+      attributes: ['id', 'marker', 'classificationType'],
       where: { researchId, includedInResearch: true },
       order: [['marker', 'ASC']],
     })
     return rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      authors: row.authors,
-      doi: row.doi,
-      year: row.publicationYear,
+      paperId: row.id,
+      marker: row.marker,
+      classification: row.classificationType ?? undefined,
     }))
+  }
+
+  async findAcceptedEvidence(researchId: string): Promise<NoteSectionEditTaskInput['acceptedEvidence']> {
+    const rows = await this.evidenceModel.findAll({
+      where: { researchId, review: EVIDENCE_REVIEW.ACCEPTED, status: EVIDENCE_STATUS.READY },
+      order: [
+        ['createdAt', 'ASC'],
+        ['id', 'ASC'],
+      ],
+    })
+
+    const evidence: NoteSectionEditTaskInput['acceptedEvidence'] = []
+    for (const row of rows) {
+      if (!row.sourceId) continue
+
+      evidence.push({
+        rowId: row.id,
+        paperId: row.sourceId,
+        study: row.study,
+        method: row.method,
+        sample: row.sample,
+        reportedError: row.reportedEffect,
+        locator: row.locator,
+      })
+    }
+    return evidence
   }
 
   private toNoteRecord(plain: ResearchNoteModel): NoteRecord {

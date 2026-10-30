@@ -79,7 +79,7 @@ export class NotesService {
     dto: RequestNoteSectionEditDto,
   ): Promise<NoteProposalAccepted> {
 
-    const research = await this.research.assertVisible(userId, researchId)
+    await this.research.assertVisible(userId, researchId)
     const note = await this.findNoteOrThrow(researchId)
 
     const section = note.content.sections.find((item) => item.id === sectionId)
@@ -98,18 +98,25 @@ export class NotesService {
       proposalId = await this.repository.createProposal(note.id, { sectionId, content: '', citations: [], unsupported: [], note: '' })
     }
 
-    const sources = await this.repository.findIncludedSources(researchId)
-
     try {
+      const sources = await this.repository.findIncludedSources(researchId)
+      const acceptedEvidence = await this.repository.findAcceptedEvidence(researchId)
+
       const run = await this.ai.send({
         kind: AI_RUN_KIND.NOTE_SECTION_EDIT,
         taskId: proposalId,
         input: {
+          researchId,
+          editId: proposalId,
+          noteId: note.id,
+          section: { id: section.id, type: section.type, heading: section.heading, content: section.content },
+          mode: section.content.trim() === '' ? 'draft' : 'revise',
           instruction: dto.instruction,
-          section,
-          ...(previous ? { previousDraft: previous.content } : {}),
-          research: { title: research.title, description: research.description, scopeNotes: research.scopeNotes },
+          // We do not keep earlier turns, so every request starts with an empty history.
+          history: [],
+          latestProposal: previous ? { proposalNumber: 1, content: previous.content.content } : undefined,
           sources,
+          acceptedEvidence,
         },
       })
       await this.repository.setProposalRun(proposalId, run.id)

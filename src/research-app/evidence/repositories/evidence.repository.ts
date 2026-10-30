@@ -5,6 +5,7 @@ import { Op } from 'sequelize'
 import type { RepositoryOptions } from '@/common/database/repository-options'
 import type {
   ConsensusRecord,
+  EvidenceSourceInfo,
   EvidenceRowRecord,
   NewConsensus,
   NewEvidenceRow,
@@ -23,7 +24,6 @@ export class EvidenceRepository {
     @InjectModel(SourceModel) private readonly sourceModel: typeof SourceModel,
   ) { }
 
-  /** Every row of the research that has not been rejected, oldest first. */
   async findVisibleRows(researchId: string): Promise<EvidenceRowRecord[]> {
     const rows = await this.rowModel.findAll({
       where: { researchId, review: { [Op.ne]: EVIDENCE_REVIEW.REJECTED } },
@@ -50,7 +50,6 @@ export class EvidenceRepository {
     return row ? this.toConsensusRecord(row) : null
   }
 
-  /** Only a pending, ready row can be reviewed. Returns false when the row did not match. */
   async review(
     researchId: string,
     evidenceId: string,
@@ -69,10 +68,6 @@ export class EvidenceRepository {
     return count > 0
   }
 
-  /**
-   * Locks the research row until the transaction ends, so two deliveries of the same AI result run one after the other.
-   * Returns false when the research does not exist.
-   */
   async lockResearch(researchId: string, options: RepositoryOptions = {}): Promise<boolean> {
     const research = await this.researchModel.findByPk(researchId, {
       attributes: ['id'],
@@ -82,37 +77,29 @@ export class EvidenceRepository {
     return research !== null
   }
 
-  /** True when this AI run already stored rows or a consensus. */
-  async hasRunData(runId: string, options: RepositoryOptions = {}): Promise<boolean> {
-    const rowCount = await this.rowModel.count({ where: { runId }, transaction: options.transaction })
-    if (rowCount > 0) {
-      return true
-    }
-
-    const consensusCount = await this.consensusModel.count({ where: { runId }, transaction: options.transaction })
-    return consensusCount > 0
-  }
-
-  /** The ids, out of those given, that are sources of the research. */
-  async findResearchSourceIds(researchId: string, sourceIds: string[], options: RepositoryOptions = {}): Promise<string[]> {
-    const sources = await this.sourceModel.findAll({
-      attributes: ['id'],
-      where: { researchId, id: sourceIds },
+  async findSourceInfo(researchId: string, sourceId: string, options: RepositoryOptions = {}): Promise<EvidenceSourceInfo | null> {
+    const source = await this.sourceModel.findOne({
+      attributes: ['id', 'title', 'authors'],
+      where: { id: sourceId, researchId },
       transaction: options.transaction,
     })
-    return sources.map((source) => source.id)
+    if (!source) return null
+
+    return { id: source.id, title: source.title, authors: source.authors }
   }
 
-  async createRows(rows: NewEvidenceRow[], options: RepositoryOptions = {}): Promise<void> {
-    const values = rows.map((row) => ({
-      ...row,
-      origin: EVIDENCE_ORIGIN.AI_EXTRACTED,
-      review: EVIDENCE_REVIEW.PENDING,
-    }))
-    await this.rowModel.bulkCreate(values, { transaction: options.transaction })
+  async saveRow(row: NewEvidenceRow, options: RepositoryOptions = {}): Promise<void> {
+    const values = { ...row, origin: EVIDENCE_ORIGIN.AI_EXTRACTED, review: EVIDENCE_REVIEW.PENDING }
+
+    const existing = await this.rowModel.findByPk(row.id, { transaction: options.transaction })
+    if (existing) {
+      await existing.update(values, { transaction: options.transaction })
+      return
+    }
+
+    await this.rowModel.create(values, { transaction: options.transaction })
   }
 
-  /** Updates the consensus of the research, or creates it when there is none. */
   async saveConsensus(consensus: NewConsensus, generatedAt: Date, options: RepositoryOptions = {}): Promise<void> {
     const { researchId, ...values } = consensus
 

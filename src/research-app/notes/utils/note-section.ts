@@ -7,6 +7,7 @@ import {
   type NoteProposalAcceptMode,
   type NoteProposalContent,
   type NoteSection,
+  type NoteSectionReadyResult,
   type NoteSectionStatus,
 } from '@moderta/api-contracts/gaia'
 
@@ -28,7 +29,7 @@ export function mergeCitations(existing: NoteCitation[], incoming: NoteCitation[
 function changeSection(
   note: NoteContent,
   sectionId: string,
-  userId: string,
+  userId: string | null,
   now: Date,
   change: (section: NoteSection) => Partial<NoteSection>,
 ): SectionChange | null {
@@ -47,6 +48,17 @@ function changeSection(
     note: { ...note, revision: note.revision + 1, sections: note.sections.map((item) => (item.id === sectionId ? section : item)) },
     section,
   }
+}
+
+/** The AI wrote the first draft of the section while the research was being created. No person is the author. */
+export function applyAiDraft(note: NoteContent, draft: NoteSectionReadyResult, now: Date): SectionChange | null {
+  return changeSection(note, draft.sectionId, null, now, () => ({
+    content: draft.content,
+    status: sectionStatusFor(draft.content),
+    origin: NOTE_SECTION_ORIGIN.AI_DRAFT,
+    citations: draft.citations,
+    unsupported: draft.unsupported,
+  }))
 }
 
 /** A person typed new content for the section. */

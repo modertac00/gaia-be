@@ -10,8 +10,9 @@ export type EvidenceRowRecord = Omit<EvidenceRow, 'reviewedAt' | 'createdAt'> & 
 export type ConsensusRecord = Omit<ConsensusSynthesis, 'generatedAt'> & { generatedAt: Date }
 
 export interface NewEvidenceRow {
+  id: string
   researchId: string
-  sourceId: string | null
+  sourceId: string
   runId: string
   study: string
   locator: string | null
@@ -20,6 +21,12 @@ export interface NewEvidenceRow {
   reportedEffect: string | null
   status: EvidenceStatus
   failureReason: string | null
+}
+
+export interface EvidenceSourceInfo {
+  id: string
+  title: string
+  authors: string[]
 }
 
 export interface NewConsensus {

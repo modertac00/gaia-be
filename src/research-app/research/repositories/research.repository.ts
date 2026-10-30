@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
+import type { ResearchCounts } from '@moderta/api-contracts/gaia'
 import { Op, type Order, type WhereOptions, literal } from 'sequelize'
 import { escapeLike } from '@/common/database/cursor-pagination'
 import type { CursorPosition } from '@/common/database/cursor-pagination'
@@ -124,6 +125,11 @@ export class ResearchRepository {
     if (!Object.keys(changes).length) return
 
     await this.researchModel.update(changes, { where: { id }, transaction: options.transaction })
+  }
+
+  /** Stores the screening counts the AI reported for a research. Does nothing when the research is gone. */
+  async saveScreeningCounts(id: string, counts: ResearchCounts): Promise<void> {
+    await this.researchModel.update(counts, { where: { id } })
   }
 
   private visibleTo(userId: string): WhereOptions {

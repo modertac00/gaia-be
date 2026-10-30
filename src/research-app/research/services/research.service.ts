@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import {
   ConflictException,
   ForbiddenException,
@@ -6,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import {
+  AI_RUN_KIND,
   type CreateResearchDto,
   FORBIDDEN_MESSAGE,
   INVALID_CURSOR_MESSAGE,
@@ -17,11 +19,15 @@ import {
   type Research,
   type UpdateResearchDto,
 } from '@moderta/api-contracts/gaia'
+import { AiTasks } from '@/ai/ai-tasks.service'
 import { decodeCursor, toRecordPage } from '@/common/database/cursor-pagination'
 import { TRANSACTION_RUNNER, type TransactionRunner } from '@/common/database/transaction-runner'
 import { ValidationFailedException } from '@/common/http/api-exception'
 import { ListResult, paginated } from '@/common/http/response-results'
+import { AppLogger } from '@/log'
+import { type CreatedNote, NoteCreator } from '@/research-app/notes/services/note-creator.service'
 import { RESEARCH_REPOSITORY } from '@/research-app/research/interfaces/research-repository.interface'
+import { toClarificationAnswers } from '@/research-app/research/utils/clarification-answers'
 import { toResearch } from '@/research-app/research/utils/research-mapper'
 import { ResearchRepository } from '@/research-app/research/repositories/research.repository'
 
@@ -30,12 +36,15 @@ export class ResearchService {
   constructor(
     @Inject(RESEARCH_REPOSITORY) private readonly repository: ResearchRepository,
     @Inject(TRANSACTION_RUNNER) private readonly transactions: TransactionRunner,
+    @Inject(NoteCreator) private readonly noteCreator: NoteCreator,
+    @Inject(AiTasks) private readonly ai: AiTasks,
+    @Inject(AppLogger) private readonly logger: AppLogger,
   ) { }
 
-  create(userId: string, dto: CreateResearchDto): Promise<Research> {
+  async create(userId: string, dto: CreateResearchDto): Promise<Research> {
     const { supervisorIds, isDraft, description, clarification, ...fields } = dto
 
-    return this.transactions.run(async (options) => {
+    const { research, note } = await this.transactions.run(async (options) => {
       const created = await this.repository.create(
         {
           ...fields,
@@ -48,8 +57,19 @@ export class ResearchService {
       )
       await this.repository.replaceSupervisors(created.id, userId, supervisorIds, options)
 
-      return toResearch({ ...created, supervisorIds })
+      let createdNote: CreatedNote | null = null
+      if (!isDraft) {
+        createdNote = await this.noteCreator.createInitialNote(created.id, userId, options)
+      }
+
+      return { research: toResearch({ ...created, supervisorIds }), note: createdNote }
     })
+
+    if (note) {
+      await this.sendResearchCreated(research, note)
+    }
+
+    return research
   }
 
   async list(userId: string, query: ListResearchQuery): Promise<ListResult<Research>> {
@@ -103,5 +123,33 @@ export class ResearchService {
       if (!updated) throw new NotFoundException(RESEARCH_NOT_FOUND_MESSAGE)
       return toResearch(updated)
     })
+  }
+
+  /** The research is already saved, so a failure to reach the AI is logged and does not fail the request. */
+  private async sendResearchCreated(research: Research, note: CreatedNote): Promise<void> {
+    try {
+      await this.ai.send({
+        kind: AI_RUN_KIND.RESEARCH_CREATED,
+        taskId: randomUUID(),
+        input: {
+          researchId: research.id,
+          question: research.title,
+          researchType: research.researchType,
+          citationStyle: research.citationStyle,
+          publicationYearFrom: research.pubYearFrom,
+          publicationYearTo: research.pubYearTo,
+          minSources: research.minSources,
+          clarifications: toClarificationAnswers(research.clarification),
+          noteId: note.id,
+          sections: note.sections.map(({ id, type, heading }) => ({ id, type, heading })),
+        },
+      })
+    } catch (error) {
+      this.logger.error(
+        `Could not start the research_created AI task for research ${research.id}: ${String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+        ResearchService.name,
+      )
+    }
   }
 }

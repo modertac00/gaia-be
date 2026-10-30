@@ -1,26 +1,29 @@
 import {
   SOURCE_CONTENT_LEVEL,
+  type NoteSectionEditResult,
+  type NoteSectionEditTaskInput,
   type SourceQuestionAnswer,
   type SourceQuestionTaskInput,
 } from '@moderta/api-contracts/gaia'
 
-const ABSTRACT_EXCERPT_MAX = 280
-
-export function stubSourceAnswer({ source }: SourceQuestionTaskInput): SourceQuestionAnswer {
-  const abstract = source.contentSummarization?.trim()
-
-  if (!abstract) {
-    return {
-      answer: 'I cannot answer from the metadata alone. Upload the PDF of this source and ask again.',
-      pages: [],
-      contentLevel: SOURCE_CONTENT_LEVEL.METADATA_ONLY,
-    }
-  }
-
-  const excerpt = abstract.length > ABSTRACT_EXCERPT_MAX ? `${abstract.slice(0, ABSTRACT_EXCERPT_MAX).trimEnd()}…` : abstract
+export function stubSourceAnswer(input: SourceQuestionTaskInput): SourceQuestionAnswer {
   return {
-    answer: `This answer is based on the abstract only, so I cannot give page-level detail. The abstract says: “${excerpt}”`,
+    researchId: input.researchId,
+    questionId: input.questionId,
+    answer: 'This is a stub answer. The AI service is not connected, so the source was not read.',
     pages: [],
-    contentLevel: SOURCE_CONTENT_LEVEL.ABSTRACT,
+    contentLevel: SOURCE_CONTENT_LEVEL.METADATA_ONLY,
+  }
+}
+
+export function stubNoteSectionEdit(input: NoteSectionEditTaskInput): NoteSectionEditResult {
+  return {
+    researchId: input.researchId,
+    editId: input.editId,
+    proposalNumber: 1,
+    content: `Stub proposal for ${input.section.heading}. The AI service is not connected.`,
+    citations: [],
+    unsupported: [],
+    assistantMessage: 'This is a stub proposal.',
   }
 }

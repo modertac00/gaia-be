@@ -138,7 +138,7 @@ export class SourcesService {
 
 
   async ask(userId: string, researchId: string, sourceId: string, dto: AskSourceQuestionDto): Promise<SourceQuestionAccepted> {
-    const research = await this.research.assertVisible(userId, researchId)
+    await this.research.assertVisible(userId, researchId)
     const source = toSource(await this.findOrThrow(researchId, sourceId))
 
     const questionId = await this.repository.addQuestion(researchId, sourceId, userId, dto.question)
@@ -147,11 +147,7 @@ export class SourcesService {
       const run = await this.ai.send({
         kind: AI_RUN_KIND.SOURCE_QUESTION,
         taskId: questionId,
-        input: {
-          question: dto.question,
-          source,
-          research: { title: research.title, description: research.description, scopeNotes: research.scopeNotes },
-        },
+        input: { researchId, questionId, paperId: source.id, question: dto.question },
       })
       return { questionId, run }
     } catch (error) {

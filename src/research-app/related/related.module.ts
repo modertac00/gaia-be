@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { AiModule } from '@/ai/ai.module'
-import { RelatedPapersHandler } from '@/research-app/related/handlers/related-papers.handler'
+import { RelatedLinksHandler } from '@/research-app/related/handlers/related-links.handler'
 import { RELATED_REPOSITORY } from '@/research-app/related/interfaces/related-repository.interface'
 import { ReadingListEntryModel } from '@/research-app/related/models/reading-list-entry.model'
 import { SourceLinkModel } from '@/research-app/related/models/source-link.model'
@@ -19,6 +19,6 @@ import { SourceModel } from '@/research-app/sources/models/source.model'
     SequelizeModule.forFeature([SourceLinkModel, ReadingListEntryModel, ResearchModel, SourceModel]),
   ],
   controllers: [RelatedController],
-  providers: [RelatedService, RelatedPapersHandler, { provide: RELATED_REPOSITORY, useClass: RelatedRepository }],
+  providers: [RelatedService, RelatedLinksHandler, { provide: RELATED_REPOSITORY, useClass: RelatedRepository }],
 })
 export class RelatedModule { }

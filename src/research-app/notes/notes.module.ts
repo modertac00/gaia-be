@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { AiModule } from '@/ai/ai.module'
 import { AuditModule } from '@/research-app/audit/audit.module'
+import { EvidenceRowModel } from '@/research-app/evidence/models/evidence-row.model'
 import { NoteChatHandler } from '@/research-app/notes/handlers/note-chat.handler'
+import { NoteSectionReadyHandler } from '@/research-app/notes/handlers/note-section-ready.handler'
 import { NoteSectionEditHandler } from '@/research-app/notes/handlers/note-section-edit.handler'
 import { NOTES_REPOSITORY } from '@/research-app/notes/interfaces/notes-repository.interface'
 import { ResearchNoteAiProposalModel } from '@/research-app/notes/models/research-note-ai-proposal.model'
@@ -19,9 +21,15 @@ import { SourceModel } from '@/research-app/sources/models/source.model'
     AiModule,
     AuditModule,
     ResearchModule,
-    SequelizeModule.forFeature([ResearchNoteModel, ResearchNoteAiProposalModel, ResearchNoteChatModel, SourceModel]),
+    SequelizeModule.forFeature([ResearchNoteModel, ResearchNoteAiProposalModel, ResearchNoteChatModel, SourceModel, EvidenceRowModel]),
   ],
   controllers: [NotesController],
-  providers: [NotesService, NoteSectionEditHandler, NoteChatHandler, { provide: NOTES_REPOSITORY, useClass: NotesRepository }],
+  providers: [
+    NotesService,
+    NoteSectionEditHandler,
+    NoteSectionReadyHandler,
+    NoteChatHandler,
+    { provide: NOTES_REPOSITORY, useClass: NotesRepository },
+  ],
 })
 export class NotesModule { }

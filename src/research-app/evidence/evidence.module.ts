@@ -3,6 +3,7 @@ import { SequelizeModule } from '@nestjs/sequelize'
 import { AiModule } from '@/ai/ai.module'
 import { AuditModule } from '@/research-app/audit/audit.module'
 import { EvidenceController } from '@/research-app/evidence/evidence.controller'
+import { EvidenceConsensusHandler } from '@/research-app/evidence/handlers/evidence-consensus.handler'
 import { EvidenceExtractionHandler } from '@/research-app/evidence/handlers/evidence-extraction.handler'
 import { EVIDENCE_REPOSITORY } from '@/research-app/evidence/interfaces/evidence-repository.interface'
 import { EvidenceConsensusSynthesisModel } from '@/research-app/evidence/models/evidence-consensus-synthesis.model'
@@ -21,6 +22,11 @@ import { SourceModel } from '@/research-app/sources/models/source.model'
     SequelizeModule.forFeature([EvidenceRowModel, EvidenceConsensusSynthesisModel, ResearchModel, SourceModel]),
   ],
   controllers: [EvidenceController],
-  providers: [EvidenceService, EvidenceExtractionHandler, { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository }],
+  providers: [
+    EvidenceService,
+    EvidenceExtractionHandler,
+    EvidenceConsensusHandler,
+    { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository },
+  ],
 })
 export class EvidenceModule { }
