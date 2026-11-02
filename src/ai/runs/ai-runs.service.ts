@@ -78,7 +78,6 @@ export class AiRuns {
     }
   }
 
-  // Tells the browsers following this research. A failure here must never break the run log.
   private notify(run: Pick<FinishedRun, 'taskId' | 'kind' | 'researchId' | 'status' | 'error'>): void {
     const { researchId } = run
     if (!researchId) return

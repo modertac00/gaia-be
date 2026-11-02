@@ -19,7 +19,6 @@ interface SocketData {
   userId?: string
 }
 
-// CORS is set in main.ts through CorsIoAdapter, from the same config as the REST app.
 @WebSocketGateway()
 export class ResearchGateway implements OnGatewayConnection {
   @WebSocketServer()
@@ -31,7 +30,6 @@ export class ResearchGateway implements OnGatewayConnection {
     @Inject(ResearchAccess) private readonly researchAccess: ResearchAccess,
   ) { }
 
-  // Same checks as JwtAuthGuard: a valid token and a user who has access.
   async handleConnection(client: Socket): Promise<void> {
     const userId = await this.findUserId(client)
     if (!userId) {

@@ -3,7 +3,6 @@ import { REALTIME_EVENT, type AiStatusEvent, type DataChangedEvent } from '@mode
 import { researchRoom } from '@/realtime/research-room'
 import { ResearchGateway } from '@/realtime/research.gateway'
 
-// Other modules call this to tell the browsers following a research that something happened.
 @Injectable()
 export class ResearchEvents {
   constructor(private readonly gateway: ResearchGateway) { }
