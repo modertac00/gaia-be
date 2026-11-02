@@ -56,26 +56,23 @@ export class AiRuns {
   }
 
   private async recordFinished(run: FinishedRun): Promise<void> {
-    try {
-      const saved = await this.repository.saveFinished({
-        id: run.taskId,
-        kind: run.kind,
-        tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
-        researchId: run.researchId,
-        status: run.status,
-        error: run.error,
-        output: run.output,
-      })
+    // A failure here is not caught: the queue consumer logs it and retries the message.
+    const saved = await this.repository.saveFinished({
+      id: run.taskId,
+      kind: run.kind,
+      tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
+      researchId: run.researchId,
+      status: run.status,
+      error: run.error,
+      output: run.output,
+    })
 
-      if (!saved) {
-        this.logger.warn(`AI run ${run.taskId} (${run.kind}) was not logged: its research is unknown`, CONTEXT)
-        return
-      }
-
-      this.notify(run)
-    } catch (error) {
-      this.logFailure(run.taskId, error)
+    if (!saved) {
+      this.logger.warn(`AI run ${run.taskId} (${run.kind}) was not logged: its research is unknown`, CONTEXT)
+      return
     }
+
+    this.notify(run)
   }
 
   private notify(run: Pick<FinishedRun, 'taskId' | 'kind' | 'researchId' | 'status' | 'error'>): void {

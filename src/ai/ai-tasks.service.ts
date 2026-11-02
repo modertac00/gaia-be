@@ -30,8 +30,7 @@ export class AiTasks {
     try {
       await this.bus.publish(AI_QUEUE_CHANNEL.TASKS, { type: AI_MESSAGE_TYPE.TASK_REQUESTED, correlationId: payload.taskId, payload })
     } catch (error) {
-      this.logger.error(`Could not send AI task ${payload.taskId}: ${String(error)}`, error instanceof Error ? error.stack : undefined, CONTEXT)
-      throw new ServiceUnavailableException(AI_SERVICE_UNAVAILABLE_MESSAGE)
+      throw new ServiceUnavailableException(AI_SERVICE_UNAVAILABLE_MESSAGE, { cause: error })
     }
 
     if (KINDS_WITHOUT_RESEARCH.has(payload.kind)) return { id: payload.taskId, kind: payload.kind, status: AI_RUN_STATUS.QUEUED }

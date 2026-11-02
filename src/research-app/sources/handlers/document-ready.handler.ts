@@ -27,9 +27,7 @@ export class DocumentReadyHandler implements AiResponseHandler<typeof AI_RUN_KIN
       return
     }
 
-    const message = `Document ready ${taskId}: source ${result.paperId} is not saved yet, it will be retried`
-    this.logger.warn(message, DocumentReadyHandler.name)
-    throw new ResultNotReadyError(message)
+    throw new ResultNotReadyError(`Document ready ${taskId}: source ${result.paperId} is not saved yet, it will be retried`)
   }
 
   onFailed(taskId: string, error: AiError, researchId?: string): Promise<void> {

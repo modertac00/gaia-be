@@ -1,8 +1,11 @@
-import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Inject } from '@nestjs/common'
 import { API_ERROR_CODE, type ApiError, type ApiErrorResponse } from '@moderta/api-contracts/gaia'
 import type { Response } from 'express'
 import { ApiException } from '@/common/http/api-exception'
 import { ensureRequestId, type RequestWithId } from '@/common/http/request-id'
+import { AppLogger } from '@/log'
+
+const CONTEXT = 'AllExceptionsFilter'
 
 export const INTERNAL_ERROR_MESSAGE = 'Internal server error'
 
@@ -30,7 +33,7 @@ function codeForStatus(status: number): string {
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name)
+  constructor(@Inject(AppLogger) private readonly logger: AppLogger) { }
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp()
@@ -38,7 +41,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = http.getResponse<Response>()
     const { statusCode, error } = this.toResult(exception)
 
-    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) this.logger.error(this.describe(exception))
+    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) this.logger.error(this.describe(exception), undefined, CONTEXT)
     if (response.headersSent) return
 
     const body: ApiErrorResponse = {
@@ -52,14 +55,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private describe(exception: unknown): string {
     if (!(exception instanceof Error)) return 'Non-error thrown'
 
-    const { parent, original, status, code } = exception as Error & {
+    const { parent, original, cause: thrownCause, status, code } = exception as Error & {
       parent?: Error
       original?: Error
+      cause?: unknown
       status?: unknown
       code?: unknown
     }
     const lines = [exception.stack ?? exception.message]
-    const cause = parent ?? original
+    const cause = parent ?? original ?? (thrownCause instanceof Error ? thrownCause : undefined)
     if (cause) lines.push(`caused by: ${cause.name}: ${cause.message}`)
     // Supabase auth errors carry these; plain Errors do not.
     if (typeof status === 'number' || typeof code === 'string') {

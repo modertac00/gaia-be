@@ -26,9 +26,7 @@ export class SourceClassifiedHandler implements AiResponseHandler<typeof AI_RUN_
 
     const source = await this.repository.findById(researchId, paperId)
     if (!source) {
-      const message = `Source classified ${taskId}: source ${paperId} is not saved yet, it will be retried`
-      this.logger.warn(message, SourceClassifiedHandler.name)
-      throw new ResultNotReadyError(message)
+      throw new ResultNotReadyError(`Source classified ${taskId}: source ${paperId} is not saved yet, it will be retried`)
     }
 
     if (source.stance !== null) {
