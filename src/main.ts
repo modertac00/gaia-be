@@ -3,12 +3,16 @@ import { type ConfigType } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { appConfig } from './config'
+import { REQUEST_ID_HEADER } from '@/common/http/request-id'
+import { setupSwagger } from '@/common/swagger'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const config = app.get<ConfigType<typeof appConfig>>(appConfig.KEY)
 
-  app.enableCors({ origin: config.frontendOrigin, credentials: false })
+  app.enableCors({ origin: config.frontendOrigin, credentials: false, exposedHeaders: [REQUEST_ID_HEADER] })
+
+  setupSwagger(app)
 
   await app.listen(config.port)
 }

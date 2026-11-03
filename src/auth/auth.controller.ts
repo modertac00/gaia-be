@@ -15,23 +15,33 @@ import {
   signupSchema,
 } from '@moderta/api-contracts/gaia'
 import { type AuthenticatedUser, CurrentUser, Public } from '@/common/auth'
-import { ResponseMessage } from '@/common/decorators/response-message.decorator'
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe'
-import { AUTH_RESPONSE_MESSAGES } from '@moderta/api-contracts/gaia'
 import { AuthService } from './services/auth.service'
+import {
+  ApiAuthController,
+  ApiForgotPassword,
+  ApiLogin,
+  ApiLogout,
+  ApiMe,
+  ApiRefresh,
+  ApiResetPassword,
+  ApiSignup,
+} from './auth.swagger'
 
+@ApiAuthController()
 @Controller('auth')
 export class AuthController {
   constructor(@Inject(AuthService) private readonly authService: AuthService) { }
 
   @Public()
+  @ApiSignup()
   @Post('signup')
-  @ResponseMessage(AUTH_RESPONSE_MESSAGES.SIGNED_UP)
   signup(@Body(new ZodValidationPipe(signupSchema)) body: SignupDto): Promise<AuthSession> {
     return this.authService.signup(body)
   }
 
   @Public()
+  @ApiLogin()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body(new ZodValidationPipe(loginSchema)) body: LoginDto): Promise<AuthSession> {
@@ -39,30 +49,35 @@ export class AuthController {
   }
 
   @Public()
+  @ApiRefresh()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body(new ZodValidationPipe(refreshTokenSchema)) body: RefreshTokenDto): Promise<AuthSession> {
     return this.authService.refresh(body)
   }
 
+  @ApiLogout()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout(@CurrentUser('accessToken') accessToken: string): Promise<MessageResponse> {
     return this.authService.logout(accessToken)
   }
 
+  @ApiMe()
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser): AuthUser {
     return this.authService.getProfile(user)
   }
 
   @Public()
+  @ApiForgotPassword()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body(new ZodValidationPipe(forgotPasswordSchema)) body: ForgotPasswordDto): Promise<MessageResponse> {
     return this.authService.forgotPassword(body)
   }
 
+  @ApiResetPassword()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   resetPassword(

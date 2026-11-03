@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module'
 import { HealthController } from './health.controller'
 import { AuthModule } from './auth/auth.module'
 import { SupabaseModule } from './supabase/supabase.module'
+import { ResearchModule } from './research/research.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SupabaseModule } from './supabase/supabase.module'
     CommonModule,
     SupabaseModule,
     AuthModule,
+    ResearchModule,
   ],
   controllers: [HealthController],
 })

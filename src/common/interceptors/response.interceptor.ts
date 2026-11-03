@@ -1,51 +1,49 @@
-import { STATUS_CODES } from 'node:http'
 import {
   type CallHandler,
   type ExecutionContext,
   HttpStatus,
-  Inject,
   Injectable,
   type NestInterceptor,
   StreamableFile,
 } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
 import type { ApiSuccessResponse } from '@moderta/api-contracts/gaia'
-import type { Request, Response } from 'express'
+import type { Response } from 'express'
 import { map, type Observable } from 'rxjs'
-import { RESPONSE_MESSAGE_KEY } from '@/common/decorators/response-message.decorator'
-import { requestPath } from '@/common/http/request-path'
+import { ensureRequestId, type RequestWithId } from '@/common/http/request-id'
+import { ListResult, WithMeta } from '@/common/http/response-results'
 
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, ApiSuccessResponse<T> | T> {
-  constructor(@Inject(Reflector) private readonly reflector: Reflector) { }
-
-  intercept(context: ExecutionContext, next: CallHandler<T>): Observable<ApiSuccessResponse<T> | T> {
+export class ResponseInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp()
-    const request = http.getRequest<Request>()
+    const request = http.getRequest<RequestWithId>()
     const response = http.getResponse<Response>()
 
     return next.handle().pipe(
-      map((data) => {
-        const statusCode = response.statusCode
-        const isRaw = data instanceof StreamableFile || Buffer.isBuffer(data)
-        if (statusCode === HttpStatus.NO_CONTENT || data === undefined || isRaw || response.headersSent) return data
-
-        const message =
-          this.reflector.getAllAndOverride<string | undefined>(RESPONSE_MESSAGE_KEY, [
-            context.getHandler(),
-            context.getClass(),
-          ]) ??
-          STATUS_CODES[statusCode] ??
-          'OK'
-
-        return {
-          success: true as const,
-          statusCode,
-          message,
-          data,
-          timestamp: new Date().toISOString(),
-          path: requestPath(request),
+      map((result: unknown) => {
+        const isRaw = result instanceof StreamableFile || Buffer.isBuffer(result)
+        if (response.statusCode === HttpStatus.NO_CONTENT || result === undefined || isRaw || response.headersSent) {
+          return result
         }
+
+        const requestId = ensureRequestId(request, response)
+
+        if (result instanceof ListResult) {
+          return {
+            success: true,
+            data: result.items,
+            meta: { requestId, limit: result.limit, nextCursor: result.nextCursor },
+          } satisfies ApiSuccessResponse<unknown[], Record<string, unknown>>
+        }
+        if (result instanceof WithMeta) {
+          return {
+            success: true,
+            data: result.data,
+            meta: { ...result.meta, requestId },
+          } satisfies ApiSuccessResponse<unknown, Record<string, unknown>>
+        }
+
+        return { success: true, data: result, meta: { requestId } } satisfies ApiSuccessResponse<unknown>
       }),
     )
   }

@@ -1,30 +1,43 @@
-import { BadRequestException, Injectable, type PipeTransform } from '@nestjs/common'
+import { Injectable, type PipeTransform } from '@nestjs/common'
+import { API_FIELD_ERRORS_SELF_KEY, type ApiFieldErrors } from '@moderta/api-contracts/gaia'
 import type { ZodType } from 'zod'
+import { ValidationFailedException } from '@/common/http/api-exception'
 
-export interface ValidationErrors {
-  [field: string]: string[] | ValidationErrors
+const BODY_KEY = 'body'
+
+const newNode = (): ApiFieldErrors => Object.create(null) as ApiFieldErrors
+
+function addMessage(node: ApiFieldErrors, key: string, message: string): void {
+  const existing = node[key]
+  if (existing === undefined) node[key] = [message]
+  else if (Array.isArray(existing)) existing.push(message)
+  else addMessage(existing, API_FIELD_ERRORS_SELF_KEY, message)
 }
 
-export const VALIDATION_FAILED_MESSAGE = 'Validation failed'
+function toFieldErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): ApiFieldErrors {
+  const fields = newNode()
 
-const isMessages = (node: string[] | ValidationErrors): node is string[] => Array.isArray(node)
-
-function toValidationErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): ValidationErrors {
-  const errors: ValidationErrors = {}
   for (const issue of issues) {
-    const path = issue.path.length ? issue.path.map(String) : ['body']
-    let node = errors
+    const path = issue.path.map(String)
+    if (!path.length) path.push(BODY_KEY)
+
+    let node = fields
     for (const key of path.slice(0, -1)) {
-      const next = node[key]
-      if (next === undefined || isMessages(next)) node[key] = {}
-      node = node[key] as ValidationErrors
+      const existing = node[key]
+      if (existing === undefined) {
+        node[key] = newNode()
+      } else if (Array.isArray(existing)) {
+        const child = newNode()
+        child[API_FIELD_ERRORS_SELF_KEY] = existing
+        node[key] = child
+      }
+      node = node[key] as ApiFieldErrors
     }
-    const leaf = path.at(-1) as string
-    const existing = node[leaf]
-    if (existing === undefined) node[leaf] = [issue.message]
-    else if (isMessages(existing)) existing.push(issue.message)
+
+    addMessage(node, path[path.length - 1], issue.message)
   }
-  return errors
+
+  return fields
 }
 
 @Injectable()
@@ -35,10 +48,7 @@ export class ZodValidationPipe<TOutput = unknown> implements PipeTransform<unkno
     const result = this.schema.safeParse(value)
 
     if (!result.success) {
-      throw new BadRequestException({
-        message: VALIDATION_FAILED_MESSAGE,
-        errors: toValidationErrors(result.error.issues),
-      })
+      throw new ValidationFailedException(toFieldErrors(result.error.issues))
     }
 
     return result.data
