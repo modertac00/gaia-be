@@ -7,17 +7,37 @@ import { DatabaseModule } from './database/database.module'
 import { HealthController } from './health.controller'
 import { AuthModule } from './auth/auth.module'
 import { SupabaseModule } from './supabase/supabase.module'
-import { ResearchModule } from './research/research.module';
+import { ResearchModule } from './research-app/research/research.module';
+import { SourcesModule } from './research-app/sources/sources.module';
+import { QueueModule } from './queue/queue.module';
+import { AiModule } from './ai/ai.module';
+import { NotesModule } from './research-app/notes/notes.module';
+import { StorageModule } from './storage/storage.module';
+import { EvidenceModule } from './research-app/evidence/evidence.module';
+import { RelatedModule } from './research-app/related/related.module';
+import { ExportsModule } from './research-app/exports/exports.module';
+import { ResearchLinksModule } from './research-app/research-links/research-links.module';
+import { AuditModule } from './research-app/audit/audit.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(configModuleOptions),
     LoggerModule,
     DatabaseModule,
+    QueueModule,
+    StorageModule,
     CommonModule,
     SupabaseModule,
     AuthModule,
     ResearchModule,
+    AiModule,
+    SourcesModule,
+    NotesModule,
+    EvidenceModule,
+    RelatedModule,
+    ExportsModule,
+    ResearchLinksModule,
+    AuditModule,
   ],
   controllers: [HealthController],
 })
