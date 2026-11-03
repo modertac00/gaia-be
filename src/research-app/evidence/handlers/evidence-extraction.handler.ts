@@ -122,8 +122,6 @@ export class EvidenceExtractionHandler implements AiResponseHandler<typeof AI_RU
   }
 
   private sourceNotReady(taskId: string, sourceId: string): ResultNotReadyError {
-    const message = `Evidence run ${taskId}: source ${sourceId} is not saved yet, it will be retried`
-    this.logger.warn(message, EvidenceExtractionHandler.name)
-    return new ResultNotReadyError(message)
+    return new ResultNotReadyError(`Evidence run ${taskId}: source ${sourceId} is not saved yet, it will be retried`)
   }
 }

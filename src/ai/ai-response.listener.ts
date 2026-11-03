@@ -4,6 +4,8 @@ import { AI_MESSAGE_TYPE, AI_QUEUE_CHANNEL, aiResultSchemaByKind, aiTaskResponse
 import type { MessageBus } from '@moderta/api-contracts/queue'
 import { queueConfig } from '@/config'
 import { AiHandlers } from '@/ai/ai-handlers'
+import { AiRuns } from '@/ai/runs/ai-runs.service'
+import { KINDS_WITHOUT_RESEARCH } from '@/ai/runs/run-resources'
 import { MESSAGE_BUS } from '@/queue/queue.constants'
 
 
@@ -13,6 +15,7 @@ export class AiResponseListener implements OnModuleInit {
     @Inject(MESSAGE_BUS) private readonly bus: MessageBus,
     @Inject(queueConfig.KEY) private readonly config: ConfigType<typeof queueConfig>,
     @Inject(AiHandlers) private readonly handlers: AiHandlers,
+    @Inject(AiRuns) private readonly runs: AiRuns,
   ) { }
 
   onModuleInit(): void {
@@ -28,14 +31,31 @@ export class AiResponseListener implements OnModuleInit {
       const handler = this.handlers.get(kind)
       if (!handler) throw new Error(`No handler is registered for AI tasks of kind "${kind}"`)
 
-      if (status === 'failed') return handler.onFailed(taskId, error ?? { code: 'UNKNOWN', message: 'The AI task failed' }, researchId)
+      // These kinds have no research to log the run against or to notify.
+      const logRun = !KINDS_WITHOUT_RESEARCH.has(kind)
+
+      if (status === 'failed') {
+        const failure = error ?? { code: 'UNKNOWN', message: 'The AI task failed' }
+        await handler.onFailed(taskId, failure, researchId)
+        if (logRun) await this.runs.recordFailed(taskId, kind, researchId, failure)
+        return
+      }
 
       const result = aiResultSchemaByKind[kind].safeParse(response.data.result)
       if (!result.success) {
-        return handler.onFailed(taskId, { code: 'INVALID_RESULT', message: `The result does not match the ${kind} contract` }, researchId)
+        const failure = { code: 'INVALID_RESULT', message: `The result does not match the ${kind} contract` }
+        await handler.onFailed(taskId, failure, researchId)
+        if (logRun) await this.runs.recordFailed(taskId, kind, researchId, failure)
+        return
       }
 
-      return handler.onSucceeded(taskId, result.data)
+      await handler.onSucceeded(taskId, result.data)
+      if (logRun) await this.runs.recordSucceeded(taskId, kind, researchId ?? this.findResearchId(result.data), result.data)
     })
+  }
+
+  private findResearchId(result: unknown): string | undefined {
+    if (typeof result !== 'object' || result === null || !('researchId' in result)) return undefined
+    return typeof result.researchId === 'string' ? result.researchId : undefined
   }
 }

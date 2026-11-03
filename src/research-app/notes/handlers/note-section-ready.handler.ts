@@ -29,9 +29,7 @@ export class NoteSectionReadyHandler implements AiResponseHandler<typeof AI_RUN_
 
       const note = await this.repository.findNoteById(noteId, options)
       if (!note) {
-        const message = `Note section ${taskId}: note ${noteId} is not saved yet, it will be retried`
-        this.logger.warn(message, NoteSectionReadyHandler.name)
-        throw new ResultNotReadyError(message)
+        throw new ResultNotReadyError(`Note section ${taskId}: note ${noteId} is not saved yet, it will be retried`)
       }
 
       if (note.researchId !== researchId) {

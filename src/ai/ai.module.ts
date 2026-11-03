@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common'
+import { SequelizeModule } from '@nestjs/sequelize'
 import { AiHandlers } from '@/ai/ai-handlers'
 import { AiResponseListener } from '@/ai/ai-response.listener'
 import { AiTasks } from '@/ai/ai-tasks.service'
-import { StubAiWorker } from '@/ai/dev/stub-ai.worker'
+import { AiRunModel } from '@/ai/runs/ai-run.model'
+import { AI_RUNS_REPOSITORY } from '@/ai/runs/ai-runs-repository.interface'
+import { AiRunsRepository } from '@/ai/runs/ai-runs.repository'
+import { AiRuns } from '@/ai/runs/ai-runs.service'
 
-/** Sends tasks to the AI service and routes its responses back to the features. Depends on no feature. */
 @Module({
-  providers: [AiTasks, AiHandlers, AiResponseListener, StubAiWorker],
-  exports: [AiTasks, AiHandlers],
+  imports: [SequelizeModule.forFeature([AiRunModel])],
+  providers: [AiTasks, AiHandlers, AiResponseListener, AiRuns, { provide: AI_RUNS_REPOSITORY, useClass: AiRunsRepository }],
+  exports: [AiTasks, AiHandlers, AI_RUNS_REPOSITORY],
 })
 export class AiModule { }

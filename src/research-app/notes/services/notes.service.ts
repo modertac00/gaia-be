@@ -197,7 +197,7 @@ export class NotesService {
           research: { title: research.title, description: research.description, scopeNotes: research.scopeNotes },
           note: note.content,
         },
-      })
+      }, researchId)
       return { messageId }
     } catch (error) {
       await this.repository.deleteChatMessage(messageId)

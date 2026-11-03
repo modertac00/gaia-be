@@ -1,21 +1,24 @@
-import type { ClarificationAnswerValue, ResearchClarification } from '@moderta/api-contracts/gaia'
+import type { ClarificationAnswerValue, ClarificationQuestion, ResearchClarification } from '@moderta/api-contracts/gaia'
 
 interface ClarificationQA {
   question: string
   answer: string
 }
 
-function answerToText(value: ClarificationAnswerValue): string {
+function answerToText(value: ClarificationAnswerValue, question: ClarificationQuestion): string {
   if (typeof value === 'boolean') {
     return value ? 'Yes' : 'No'
   }
   if (Array.isArray(value)) {
     return value.join(', ')
   }
+  if (typeof value === 'number') {
+    const unit = question.answerType === 'number' ? question.unit : undefined
+    return unit ? `${value} ${unit}` : String(value)
+  }
   return value
 }
 
-/** The clarification questions the user answered, as question and answer text. Unanswered ones are left out. */
 export function toClarificationAnswers(clarification: ResearchClarification | null): ClarificationQA[] {
   if (!clarification) return []
 
@@ -25,7 +28,7 @@ export function toClarificationAnswers(clarification: ResearchClarification | nu
     const value = clarification.answers[question.questionId]
     if (value === undefined) continue
 
-    const answer = answerToText(value).trim()
+    const answer = answerToText(value, question).trim()
     if (answer === '') continue
 
     result.push({ question: question.text, answer })

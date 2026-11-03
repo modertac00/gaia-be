@@ -9,6 +9,7 @@ import {
 } from './auth'
 import { AllExceptionsFilter } from './filters/all-exceptions.filter'
 import { RequestIdMiddleware } from './http/request-id.middleware'
+import { RequestLoggingInterceptor } from './interceptors/request-logging.interceptor'
 import { ResponseInterceptor } from './interceptors/response.interceptor'
 
 @Global()
@@ -18,6 +19,7 @@ import { ResponseInterceptor } from './interceptors/response.interceptor'
     { provide: USER_ACCESS_RESOLVER, useClass: MetadataUserAccessResolver },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
