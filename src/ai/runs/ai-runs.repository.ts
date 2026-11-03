@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { AI_RUN_STATUS } from '@moderta/api-contracts/gaia'
 import { Op, type WhereOptions } from 'sequelize'
+import type { RepositoryOptions } from '@/common/database/repository-options'
 import type { CursorPosition } from '@/common/database/cursor-pagination'
 import { AiRunModel } from '@/ai/runs/ai-run.model'
 import type { AiRunFilters, AiRunRecord, FinishedAiRun, NewQueuedAiRun } from '@/ai/runs/ai-runs-repository.interface'
@@ -10,10 +11,11 @@ import type { AiRunFilters, AiRunRecord, FinishedAiRun, NewQueuedAiRun } from '@
 export class AiRunsRepository {
   constructor(@InjectModel(AiRunModel) private readonly model: typeof AiRunModel) { }
 
-  async createQueued(run: NewQueuedAiRun): Promise<void> {
+  async createQueued(run: NewQueuedAiRun, options: RepositoryOptions = {}): Promise<void> {
     await this.model.findOrCreate({
       where: { id: run.id },
       defaults: { ...run, status: AI_RUN_STATUS.QUEUED, error: null, output: null, startedAt: new Date(), finishedAt: null },
+      transaction: options.transaction,
     })
   }
 

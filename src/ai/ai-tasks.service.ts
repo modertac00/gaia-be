@@ -9,6 +9,7 @@ import {
   aiTaskPayloadSchema,
 } from '@moderta/api-contracts/gaia'
 import type { MessageBus } from '@moderta/api-contracts/queue'
+import type { RepositoryOptions } from '@/common/database/repository-options'
 import { AppLogger } from '@/log'
 import { AiRuns } from '@/ai/runs/ai-runs.service'
 import { KINDS_WITHOUT_RESEARCH } from '@/ai/runs/run-resources'
@@ -24,7 +25,7 @@ export class AiTasks {
     @Inject(AiRuns) private readonly runs: AiRuns,
   ) { }
 
-  async send(task: AiTaskPayload, researchId?: string): Promise<AiRunRef> {
+  async send(task: AiTaskPayload, researchId?: string, options: RepositoryOptions = {}): Promise<AiRunRef> {
     const payload = aiTaskPayloadSchema.parse(task)
 
     try {
@@ -37,7 +38,7 @@ export class AiTasks {
 
     const runResearchId = researchId ?? ('researchId' in payload.input ? payload.input.researchId : undefined)
     if (runResearchId) {
-      await this.runs.recordQueued(runResearchId, payload)
+      await this.runs.recordQueued(runResearchId, payload, options)
     } else {
       this.logger.warn(`AI task ${payload.taskId} (${payload.kind}) was not logged: no researchId`, CONTEXT)
     }

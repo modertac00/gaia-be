@@ -8,6 +8,7 @@ import {
   type AiRunStatus,
   type AiTaskPayload,
 } from '@moderta/api-contracts/gaia'
+import type { RepositoryOptions } from '@/common/database/repository-options'
 import { AppLogger } from '@/log'
 import { AI_RUNS_REPOSITORY } from '@/ai/runs/ai-runs-repository.interface'
 import { AiRunsRepository } from '@/ai/runs/ai-runs.repository'
@@ -33,16 +34,21 @@ export class AiRuns {
     @Inject(ResearchEvents) private readonly events: ResearchEvents,
   ) { }
 
-  async recordQueued(researchId: string, task: AiTaskPayload): Promise<void> {
+  /** Inside a transaction pass its options, so the run is saved on the same connection and a failure rolls everything back. */
+  async recordQueued(researchId: string, task: AiTaskPayload, options: RepositoryOptions = {}): Promise<void> {
     try {
-      await this.repository.createQueued({
-        id: task.taskId,
-        researchId,
-        tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
-        kind: task.kind,
-      })
+      await this.repository.createQueued(
+        {
+          id: task.taskId,
+          researchId,
+          tool: ACTIVITY_TOOL.LITERATURE_REVIEW,
+          kind: task.kind,
+        },
+        options,
+      )
       this.notify({ taskId: task.taskId, kind: task.kind, researchId, status: AI_RUN_STATUS.QUEUED, error: null })
     } catch (error) {
+      if (options.transaction) throw error
       this.logFailure(task.taskId, error)
     }
   }

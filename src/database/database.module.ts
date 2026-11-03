@@ -21,6 +21,8 @@ const logger = new Logger('Sequelize')
         database: db.database,
         autoLoadModels: true,
         synchronize: true, // schema changes only via migrations in prod(npm run db:migrate:up)
+        pool: { max: 10, acquire: 30_000 },
+        dialectOptions: { idle_in_transaction_session_timeout: 30_000, lock_timeout: 15_000 },
         logging: app.isDevelopment ? (sql: string) => logger.debug(sql) : false,
       }),
     }),

@@ -28,5 +28,6 @@ import { SourceModel } from '@/research-app/sources/models/source.model'
     EvidenceConsensusHandler,
     { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository },
   ],
+  exports: [EvidenceExtractionHandler],
 })
 export class EvidenceModule { }

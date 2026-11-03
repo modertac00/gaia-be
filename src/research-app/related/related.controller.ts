@@ -1,9 +1,18 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common'
-import { type RelatedPapers, type ResearchIdParam, researchIdParamSchema } from '@moderta/api-contracts/gaia'
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post } from '@nestjs/common'
+import {
+  type AddReadingListPaperDto,
+  type AddReadingListPaperParam,
+  addReadingListPaperParamSchema,
+  addReadingListPaperSchema,
+  type ReadingListPaperAccepted,
+  type RelatedPapers,
+  type ResearchIdParam,
+  researchIdParamSchema,
+} from '@moderta/api-contracts/gaia'
 import { CurrentUser } from '@/common/auth'
 import { ZodValidationPipe } from '@/common/pipes/zod-validation.pipe'
 import { RelatedService } from '@/research-app/related/services/related.service'
-import { ApiGetRelatedPapers, ApiRelatedController } from './related.swagger'
+import { ApiAddReadingListPaper, ApiGetRelatedPapers, ApiRelatedController } from './related.swagger'
 
 @ApiRelatedController()
 @Controller('research/:researchId/related')
@@ -17,5 +26,16 @@ export class RelatedController {
     @Param(new ZodValidationPipe(researchIdParamSchema)) params: ResearchIdParam,
   ): Promise<RelatedPapers> {
     return this.relatedService.get(userId, params.researchId)
+  }
+
+  @ApiAddReadingListPaper()
+  @Post('reading-list/:sourceId/add')
+  @HttpCode(HttpStatus.ACCEPTED)
+  addReadingListPaper(
+    @CurrentUser('id') userId: string,
+    @Param(new ZodValidationPipe(addReadingListPaperParamSchema)) params: AddReadingListPaperParam,
+    @Body(new ZodValidationPipe(addReadingListPaperSchema)) _body: AddReadingListPaperDto,
+  ): Promise<ReadingListPaperAccepted> {
+    return this.relatedService.addReadingListPaper(userId, params.researchId, params.sourceId)
   }
 }

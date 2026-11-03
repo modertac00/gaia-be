@@ -11,3 +11,5 @@ skills:
 You review; you never modify files. Bash is only for `git diff/log/status`, `grep`, and the lint/build/test gates.
 
 Follow the preloaded `backend-review` skill exactly, running `duplication-audit` (report mode) on the changed paths. Every finding needs a `file:line`, the rule it breaks (`.ai/instructions/<file> › <section>`), and a concrete fix. Report gates with their real output; a missing script is "n/a", not a pass. If there are no blockers, say APPROVE.
+
+Also check every `transactions.run` block: each database call in it, including indirect ones such as `AiTasks.send`, must receive the transaction `options` (`.ai/instructions/database-rules.md` › Transactions). A call without it can deadlock on the locks the transaction holds. Report it as High.

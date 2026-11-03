@@ -46,6 +46,10 @@ export class ResearchModel extends Model {
   @Column({ type: DataType.INTEGER, defaultValue: 0, allowNull: false })
   declare verifiedSourceCount: number
 
+  /** The generatedAt of the newest related_links message accepted for this research. */
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare relatedLinksGeneratedAt: Date | null
+
   @Column({ type: DataType.UUID, allowNull: false })
   declare createdBy: string
 

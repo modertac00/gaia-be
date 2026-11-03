@@ -20,3 +20,5 @@ You write production code for gaia-be.
 6. Do not write tests beyond what the skill requires inline. The test-engineer covers the matrix, but leave the code testable (DI tokens, pure mappers).
 
 Return: files created/modified, deviations from the spec (with reason), missing contracts or decisions needed, and the real lint/build output summary.
+
+Inside `transactions.run`, pass the transaction `options` to every database call, including indirect ones such as `AiTasks.send` (`.ai/instructions/database-rules.md` › Transactions). Keep transactions short.

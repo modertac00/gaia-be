@@ -150,6 +150,12 @@ export class SourcesRepository {
     )
   }
 
+  /** The marker for the next source of the research: one more than the highest marker, 1 for the first. */
+  async nextMarker(researchId: string, options: RepositoryOptions = {}): Promise<number> {
+    const highest = await this.sourceModel.max<number | null, SourceModel>('marker', { where: { researchId }, transaction: options.transaction })
+    return (highest ?? 0) + 1
+  }
+
   /** Marks the source resolved and stores the AI summary when there is one. Returns false when the source does not exist. */
   async saveDocumentReady(researchId: string, sourceId: string, summary: string | null): Promise<boolean> {
     const values: Partial<SourceModel> = { resolution: SOURCE_RESOLUTION.RESOLVED }

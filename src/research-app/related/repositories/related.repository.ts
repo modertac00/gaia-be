@@ -4,14 +4,13 @@ import type { PublicationYearCount, SourceLink } from '@moderta/api-contracts/ga
 import { col, fn, Op } from 'sequelize'
 import type { RepositoryOptions } from '@/common/database/repository-options'
 import type {
-  NewReadingListEntry,
+  LockedResearch,
   ReadingListRecord,
   SourceLinkRecord,
 } from '@/research-app/related/interfaces/related-repository.interface'
 import { ReadingListEntryModel } from '@/research-app/related/models/reading-list-entry.model'
 import { SourceLinkModel } from '@/research-app/related/models/source-link.model'
 import { ResearchModel } from '@/research-app/research/models/research.model'
-import type { SourceRecord } from '@/research-app/sources/interfaces/sources-repository.interface'
 import { SourceModel } from '@/research-app/sources/models/source.model'
 
 @Injectable()
@@ -42,20 +41,21 @@ export class RelatedRepository {
   async findReadingList(researchId: string): Promise<ReadingListRecord[]> {
     const rows = await this.readingListModel.findAll({
       where: { researchId },
-      include: [{ model: SourceModel, required: true }],
       order: [
         ['rank', 'ASC'],
         ['id', 'ASC'],
       ],
     })
+    return rows.map((row) => this.toReadingListRecord(row))
+  }
 
-    const entries: ReadingListRecord[] = []
-    for (const row of rows) {
-      if (row.source) {
-        entries.push({ rank: row.rank, source: this.toSourceRecord(row.source) })
-      }
-    }
-    return entries
+  async findReadingListEntry(researchId: string, sourceId: string, options: RepositoryOptions = {}): Promise<ReadingListRecord | null> {
+    const row = await this.readingListModel.findOne({ where: { researchId, sourceId }, transaction: options.transaction })
+    return row ? this.toReadingListRecord(row) : null
+  }
+
+  async deleteReadingListEntry(researchId: string, sourceId: string, options: RepositoryOptions = {}): Promise<void> {
+    await this.readingListModel.destroy({ where: { researchId, sourceId }, transaction: options.transaction })
   }
 
   /** Number of included sources per publication year, oldest year first. Sources without a year are skipped. */
@@ -76,15 +76,19 @@ export class RelatedRepository {
 
   /**
    * Locks the research row until the transaction ends, so two deliveries of the same AI result run one after the other.
-   * Returns false when the research does not exist.
+   * Returns null when the research does not exist.
    */
-  async lockResearch(researchId: string, options: RepositoryOptions = {}): Promise<boolean> {
+  async lockResearch(researchId: string, options: RepositoryOptions = {}): Promise<LockedResearch | null> {
     const research = await this.researchModel.findByPk(researchId, {
-      attributes: ['id'],
+      attributes: ['id', 'relatedLinksGeneratedAt'],
       transaction: options.transaction,
       lock: options.transaction ? options.transaction.LOCK.UPDATE : undefined,
     })
-    return research !== null
+    return research ? { relatedLinksGeneratedAt: research.relatedLinksGeneratedAt } : null
+  }
+
+  async saveLinksGeneratedAt(researchId: string, generatedAt: Date, options: RepositoryOptions = {}): Promise<void> {
+    await this.researchModel.update({ relatedLinksGeneratedAt: generatedAt }, { where: { id: researchId }, transaction: options.transaction })
   }
 
   /** The ids of every source of the research. */
@@ -108,35 +112,23 @@ export class RelatedRepository {
     await this.linkModel.bulkCreate(values, { transaction: options.transaction })
   }
 
-  async createReadingList(researchId: string, entries: NewReadingListEntry[], options: RepositoryOptions = {}): Promise<void> {
+  async createReadingList(researchId: string, entries: ReadingListRecord[], options: RepositoryOptions = {}): Promise<void> {
     const values = entries.map((entry) => ({ ...entry, researchId }))
     await this.readingListModel.bulkCreate(values, { transaction: options.transaction })
   }
 
-  private toSourceRecord(source: SourceModel): SourceRecord {
+  private toReadingListRecord(row: ReadingListEntryModel): ReadingListRecord {
     return {
-      id: source.id,
-      researchId: source.researchId,
-      marker: source.marker,
-      title: source.title,
-      authors: source.authors,
-      venue: source.venue,
-      publicationYear: source.publicationYear,
-      doi: source.doi,
-      url: source.url,
-      tier: source.tier,
-      citedByCount: source.citedByCount,
-      contentSummarization: source.contentSummarization,
-      stance: source.classificationType,
-      classifiedBy: source.classifiedBy,
-      isVerified: source.isVerified,
-      verifiedBy: source.verifiedBy,
-      verifiedAt: source.verifiedAt,
-      resolution: source.resolution,
-      includedInResearch: source.includedInResearch,
-      createdBy: source.createdBy,
-      createdAt: source.createdAt,
-      updatedAt: source.updatedAt,
+      rank: row.rank,
+      sourceId: row.sourceId,
+      reason: row.reason,
+      title: row.title,
+      authors: row.authors,
+      year: row.year,
+      venue: row.venue,
+      doi: row.doi,
+      paperUrl: row.paperUrl,
+      citedByCount: row.citedByCount,
     }
   }
 }

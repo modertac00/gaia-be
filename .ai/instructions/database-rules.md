@@ -32,6 +32,8 @@ Target ORM is **Sequelize** via `@nestjs/sequelize` + `sequelize-typescript`. Ex
 
 - The **service** owns the transaction boundary for multi-write use cases: `this.sequelize.transaction(async (transaction) => { ... })` via an injected `TransactionRunner` port (keeps services free of Sequelize imports).
 - Repository methods accept an optional `{ transaction?: Transaction }` option and pass it to every query.
+- Inside `transactions.run`, **every** database call must receive the transaction `options`, including calls made indirectly through another service (for example `AiTasks.send`, which saves an `llm_runs` row). A call without it runs on another pool connection and waits for the locks the transaction holds, while the transaction waits for it: a deadlock that fills the connection pool.
+- Keep transactions short. Do not wait on a queue, HTTP call or user action inside one unless that call saves its own rows through the same `options`.
 
 ## Seeds
 

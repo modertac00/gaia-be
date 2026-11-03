@@ -11,11 +11,13 @@ import { RelatedService } from '@/research-app/related/services/related.service'
 import { ResearchModel } from '@/research-app/research/models/research.model'
 import { ResearchModule } from '@/research-app/research/research.module'
 import { SourceModel } from '@/research-app/sources/models/source.model'
+import { SourcesModule } from '@/research-app/sources/sources.module'
 
 @Module({
   imports: [
     AiModule,
     ResearchModule,
+    SourcesModule,
     SequelizeModule.forFeature([SourceLinkModel, ReadingListEntryModel, ResearchModel, SourceModel]),
   ],
   controllers: [RelatedController],
