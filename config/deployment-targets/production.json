@@ -1,0 +1,20 @@
+{
+  "account": "516900616370",
+  "region": "ap-south-1",
+  "cluster": "moderta-production-cluster",
+  "service": "moderta-production-gaia-api",
+  "family": "moderta-production-gaia-api",
+  "schemaFamily": "moderta-production-gaia-schema",
+  "container": "gaia-api",
+  "database": "gaia",
+  "runtimeUser": "gaia_app",
+  "migratorUser": "gaia_migrator",
+  "rdsIdentifier": "moderta-prod-postgres",
+  "dbHost": "moderta-prod-postgres.cnoc4ocwujou.ap-south-1.rds.amazonaws.com",
+  "rdsSecurityGroupId": "sg-0e990b563689840cd",
+  "ecsHostSecurityGroupId": "sg-0367a986b43e00f5a",
+  "secretPrefix": "moderta/production/gaia/",
+  "port": 3001,
+  "publicIngressEnabled": false,
+  "sqsEnabled": false
+}

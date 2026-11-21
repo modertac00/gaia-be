@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+-- Prerequisite: pgcrypto installed by authorized RDS administrator (not the migrator).
 
 create table if not exists app_users (
   id uuid primary key default gen_random_uuid(),

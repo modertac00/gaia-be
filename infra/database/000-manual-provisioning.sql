@@ -1,0 +1,6 @@
+-- Reference only. Already provisioned manually as in ESM Reporting / AI Desk.
+-- DO NOT execute automatically from GitHub Actions.
+-- Databases: gaia | users: gaia_app and gaia_migrator
+-- Passwords are stored in Secrets Manager, not in this file.
+-- Authorized DBA must verify pgcrypto in database gaia:
+-- CREATE EXTENSION IF NOT EXISTS pgcrypto;

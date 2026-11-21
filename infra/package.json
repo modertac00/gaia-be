@@ -1,0 +1,1 @@
+{"name":"moderta-gaia-aws-infrastructure","private":true,"version":"1.0.0","scripts":{"build":"tsc","test":"npm run build && node --test test/*.test.cjs","synth":"cdk synth","check":"npm test","typecheck":"tsc --noEmit"},"dependencies":{"aws-cdk-lib":"^2.220.0","constructs":"^10.4.0"},"devDependencies":{"aws-cdk":"^2.1020.0","typescript":"~5.9.3","@types/node":"^22.0.0"}}

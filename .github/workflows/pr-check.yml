@@ -1,0 +1,21 @@
+name: 'PR / Gaia application and deployment validation'
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build && npm run build:deploy
+      - run: python3 -m unittest discover -s test/deploy -p 'test_*.py'
+      - run: python3 -m compileall -q deploy
+      - name: Check CDK foundation
+        working-directory: infra
+        run: npm ci --no-audit --no-fund && npm test

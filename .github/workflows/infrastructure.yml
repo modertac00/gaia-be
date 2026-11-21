@@ -1,0 +1,57 @@
+name: '01 · INFRA / Gaia-only CDK foundation'
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [diff, deploy]
+        default: diff
+        required: true
+      confirmation:
+        description: 'Type FOUNDATION to deploy. Diff requires no confirmation.'
+        default: NO
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: gaia-production-infrastructure
+  cancel-in-progress: false
+jobs:
+  infra:
+    if: inputs.action == 'diff' || inputs.confirmation == 'FOUNDATION'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment: production-infrastructure
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+      - name: CDK installation and tests
+        working-directory: infra
+        run: npm ci --no-audit --no-fund && npm test
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_INFRA_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Existing account and cluster
+        run: |
+          test "$(aws sts get-caller-identity --query Account --output text)" = 516900616370
+          test "$(aws ecs describe-clusters --clusters moderta-production-cluster --query 'clusters[0].status' --output text)" = ACTIVE
+      - name: CDK Gaia foundation diff and optional deploy
+        working-directory: infra
+        env:
+          AWS_ACCOUNT_ID: '516900616370'
+          AWS_REGION: ap-south-1
+          GAIA_STACK_SELECTION: foundation
+          GAIA_GITHUB_REPOSITORY: ${{ github.repository }}
+          GAIA_GITHUB_OWNER_ID: ${{ github.repository_owner_id }}
+          GAIA_GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          GHCR_SECRET_ARN: ${{ vars.GHCR_SECRET_ARN }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          npx cdk diff ModertaGaiaFoundationStack --no-change-set
+          if [ "$ACTION" = deploy ]; then npx cdk deploy ModertaGaiaFoundationStack --require-approval never; fi

@@ -10,7 +10,13 @@
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
     "db:seed:init": "ts-node -r tsconfig-paths/register scripts/seed-init-data.ts",
-    "account:create": "ts-node -r tsconfig-paths/register scripts/create-account.ts"
+    "account:create": "ts-node -r tsconfig-paths/register scripts/create-account.ts",
+    "build:deploy": "tsc -p tsconfig.deploy.json",
+    "db:migrate:compiled": "node dist-deploy/scripts/migrate.js",
+    "db:seed:compiled": "node dist-deploy/scripts/seed-init-data.js",
+    "account:create:compiled": "node dist-deploy/scripts/create-account.js",
+    "db:verify:compiled": "node dist-deploy/scripts/verify-db.js",
+    "db:plan:compiled": "node dist-deploy/scripts/check-migrations.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

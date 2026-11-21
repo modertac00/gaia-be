@@ -1,0 +1,119 @@
+name: '02 · RELEASE / Gaia ECS (private, no route)'
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY to build and deploy Gaia only'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: gaia-production-release
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: inputs.confirmation == 'DEPLOY'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build && npm run build:deploy
+      - run: python3 -m unittest discover -s test/deploy -p 'test_*.py'
+      - run: python3 -m compileall -q deploy
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.ref.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        id: image
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
+          provenance: false
+      - id: ref
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "image_ref=ghcr.io/${GITHUB_REPOSITORY,,}@${DIGEST}" >> "$GITHUB_OUTPUT"
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE_REF: ${{ needs.build.outputs.image_ref }}
+      GHCR_SECRET_ARN: ${{ vars.GHCR_SECRET_ARN }}
+      PUBLIC_INGRESS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Shared-platform read-only preflight
+        run: python3 deploy/preflight.py
+      - name: Verify DB app/migrator login and required privileges
+        run: |
+          SCHEMA_ACTION=verify-app python3 deploy/schema_task.py
+          SCHEMA_ACTION=verify-migrator python3 deploy/schema_task.py
+      - name: Plan migrations (no changes)
+        id: plan
+        run: |
+          set +e
+          SCHEMA_ACTION=plan python3 deploy/schema_task.py
+          rc=$?
+          set -e
+          if [ "$rc" = 10 ]; then echo 'pending=true' >> "$GITHUB_OUTPUT";
+          elif [ "$rc" = 0 ]; then echo 'pending=false' >> "$GITHUB_OUTPUT";
+          else exit "$rc"; fi
+      - name: Create RDS recovery snapshot if migration pending
+        if: steps.plan.outputs.pending == 'true'
+        id: snapshot
+        env:
+          MIGRATION_NEEDED: 'true'
+          MIGRATION_APPROVED: 'true'
+        run: python3 deploy/schema_snapshot.py
+      - name: Apply Gaia migrations from same immutable image
+        if: steps.plan.outputs.pending == 'true'
+        env:
+          SCHEMA_ACTION: migrate
+          SCHEMA_AUTO_APPROVED: 'true'
+          MIGRATION_SNAPSHOT_ID: ${{ steps.snapshot.outputs.snapshot_id }}
+        run: python3 deploy/schema_task.py
+      - name: Verify post-migration application rights
+        run: |
+          SCHEMA_ACTION=post-app python3 deploy/schema_task.py
+          SCHEMA_ACTION=post-migrator python3 deploy/schema_task.py
+      - name: Deploy Gaia only (private EC2 bridge)
+        env:
+          RELEASE_APPROVED: 'true'
+        run: python3 deploy/release.py
+      - name: Summary
+        run: |
+          echo 'Gaia ECS private release complete; no Traefik/DNS/SQS changes performed.' >> "$GITHUB_STEP_SUMMARY"

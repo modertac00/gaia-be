@@ -1,0 +1,33 @@
+name: '04 · RECOVERY / Gaia ECS task revision only'
+on:
+  workflow_dispatch:
+    inputs:
+      task_definition:
+        description: 'Exact previously healthy Gaia task-definition ARN'
+        required: true
+      confirmation:
+        description: 'Type RECOVER_GAIA_ONLY'
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: gaia-production-release
+  cancel-in-progress: false
+jobs:
+  recover:
+    if: inputs.confirmation == 'RECOVER_GAIA_ONLY'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Revert Gaia ECS revision only
+        env:
+          RECOVER_CONFIRMATION: ${{ inputs.confirmation }}
+          RECOVER_TASK_DEFINITION: ${{ inputs.task_definition }}
+        run: python3 deploy/recover.py

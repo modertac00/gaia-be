@@ -1,0 +1,1 @@
+{"app":"node dist/bin/gaia.js","context":{"@aws-cdk/core:checkSecretUsage":true}}

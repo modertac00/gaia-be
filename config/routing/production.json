@@ -1,0 +1,9 @@
+{
+  "application": "gaia",
+  "publicRoutingEnabled": false,
+  "domain": null,
+  "routerId": null,
+  "gateway": "existing-traefik",
+  "routeWorkflowEnabled": false,
+  "notes": "No public routing in Phase 1. Prepared ECS bridge hostPort=0; gateway route must be separately approved."
+}

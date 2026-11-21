@@ -1,0 +1,3 @@
+# INTENTIONALLY DISABLED. No domain assigned. No Traefik changes in Phase 1.
+# Phase 2 must follow the approved Moderta gateway routing contract,
+# separate review/approval, TLS verification, and routing rollback.
