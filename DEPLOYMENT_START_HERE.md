@@ -1,6 +1,6 @@
 > **OIDC bootstrap prerequisite:** If `configure-aws-credentials` repeatedly retries on the infrastructure job, follow [docs/OIDC_IMMUTABLE_SUBJECT_AND_BOOTSTRAP.md](docs/OIDC_IMMUTABLE_SUBJECT_AND_BOOTSTRAP.md). The GitHub workflow cannot repair its own role trust.
 
-> **Configuration update:** See [docs/FLEXIBLE_CONFIGURATION.md](docs/FLEXIBLE_CONFIGURATION.md). All infrastructure identifiers and exact Secrets Manager ARNs are now provided through protected GitHub environment variables, not embedded in the repository.
+> **Configuration update:** See [docs/FLEXIBLE_CONFIGURATION.md](docs/FLEXIBLE_CONFIGURATION.md) and [docs/GAIA_ECS_RESOURCE_CONFIGURATION.md](docs/GAIA_ECS_RESOURCE_CONFIGURATION.md). Infrastructure targets, task CPU/memory sizing, and ECS rollout policy are environment-configurable with reviewed defaults; no secret values are stored in the repository.
 
 # Gaia Backend — Moderta production architecture parity, Phase 1
 
@@ -13,7 +13,7 @@ This package uses the same **CDK bootstrap/foundation**, immutable GHCR image, G
 2. Create `moderta/production/gaia/jwt-secret` (if missing) as a Secrets Manager *SecretString*. Confirm existing `GHCR_SECRET_ARN` is appropriate for ECS `repositoryCredentials`.
 3. Confirm GitHub repo OIDC owner/repo numeric IDs and immutable subject format with your existing issuer, and bootstrap the **Gaia-only** infrastructure IAM role using `infra/bin/gaia.ts` in `GAIA_STACK_SELECTION=bootstrap` with an approved admin identity. Bootstrap stack is a one-time admin action and isn't run automatically from GitHub.
 4. GitHub environments: `production-infrastructure` needs `AWS_INFRA_ROLE_ARN`, `GHCR_SECRET_ARN`; `production` needs `AWS_DEPLOY_ROLE_ARN`, `GHCR_SECRET_ARN`. Both require protection approvals. The infra role and app deploy role are DIFFERENT.
-5. Verify the existing RDS SG ID `sg-0e990b563689840cd`, ECS host SG `sg-0367a986b43e00f5a`, and `t4g.large` capacity still match actual AWS conditions. They are assertions, not a request to change network resources.
+5. Verify the existing RDS SG ID `sg-0e990b563689840cd`, ECS host SG `sg-0367a986b43e00f5a`, and current **actual** ECS host CPU/memory capacity match AWS conditions. Launch Template settings alone do not resize a running EC2 instance; verify the ASG instance refresh completed. These are assertions, not a request to change network resources.
 
 ## Workflows
 - **01 · INFRA** `infrastructure.yml` default diff; explicit FOUNDATION to deploy Gaia CDK foundation. Never provisions shared cluster or gateway.

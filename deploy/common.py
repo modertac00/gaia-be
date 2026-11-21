@@ -3,6 +3,7 @@ ECS retrieves secret values; this module never retrieves them.
 """
 import json,os,re,subprocess,time
 from pathlib import Path
+from resources import container_resources
 ROOT=Path(__file__).resolve().parents[1]
 def fail(message):raise RuntimeError('GAIA_BLOCKED: '+message)
 def load_config():
@@ -61,7 +62,9 @@ def container(image_ref,command,user,secret_arn,kind):
       if os.getenv('GAIA_BASELINE_ACTION')=='apply':env['GAIA_BASELINE_APPROVED']=os.getenv('GAIA_BASELINE_APPROVED','')
     secrets=[{'name':'DB_PASSWORD','valueFrom':secret_arn}]
     if is_app:secrets.append({'name':'JWT_SECRET','valueFrom':secret('jwt-secret')})
-    d={'name':CONTAINER if is_app else 'gaia-schema-job','image':image_ref,'essential':True,'cpu':256,'memoryReservation':256,'memory':512,
+    resources=container_resources(kind)
+    d={'name':CONTAINER if is_app else 'gaia-schema-job','image':image_ref,'essential':True,
+      'cpu':resources.cpu,'memoryReservation':resources.reservation,'memory':resources.limit,
       'repositoryCredentials':{'credentialsParameter':ghcr()},'environment':[{'name':k,'value':v} for k,v in env.items()],
       'secrets':secrets,'command':command,'logConfiguration':{'logDriver':'awslogs','options':{'awslogs-group':LOG,'awslogs-region':REGION,'awslogs-stream-prefix':kind}}}
     if is_app:

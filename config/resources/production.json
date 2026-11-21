@@ -1,0 +1,17 @@
+{
+  "api": {
+    "cpuUnits": 256,
+    "memoryReservationMiB": 512,
+    "memoryLimitMiB": 1024
+  },
+  "schema": {
+    "cpuUnits": 256,
+    "memoryReservationMiB": 256,
+    "memoryLimitMiB": 512
+  },
+  "deployment": {
+    "minHealthyPercent": 100,
+    "maxPercent": 200,
+    "availabilityZoneRebalancing": "ENABLED"
+  }
+}

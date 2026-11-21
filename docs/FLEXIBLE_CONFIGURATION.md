@@ -20,3 +20,10 @@ For local bootstrap/CDK operations, export the same vars along with `GAIA_GITHUB
 - Existing database/users are never created by GitHub workflows.
 - Traefik remains disabled pending a separately approved routing change.
 - No mock or fake API results are introduced.
+
+## ECS resource and rolling deployment variables
+
+See [GAIA_ECS_RESOURCE_CONFIGURATION.md](GAIA_ECS_RESOURCE_CONFIGURATION.md) for
+validated GitHub `production` environment variables, version-controlled
+CPU/memory defaults, per-schema-task sizing, migration capacity gates,
+AZ rebalancing compatibility and the stop-first downtime trade-off.

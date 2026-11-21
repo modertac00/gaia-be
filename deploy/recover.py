@@ -1,6 +1,7 @@
 """Gaia-only ECS task rollback. Never touches RDS, SQS or Traefik."""
 import os
 from common import aws,fail,guard,CLUSTER,SERVICE,FAMILY,CONTAINER,wait_healthy,REGION,ACCOUNT,DB,APP_USER
+from resources import deployment_policy
 
 def main():
  guard()
@@ -12,7 +13,7 @@ def main():
  if info['family']!=FAMILY or len(c)!=1 or c[0]['name']!=CONTAINER:fail('Wrong container/task family')
  env={x['name']:x['value'] for x in c[0].get('environment',[])}
  if env.get('DB_NAME')!=DB or env.get('DB_USER')!=APP_USER:fail('Wrong runtime DB identity')
- aws('ecs','update-service','--cluster',CLUSTER,'--service',SERVICE,'--task-definition',arn,'--desired-count','1')
+ aws('ecs','update-service','--cluster',CLUSTER,'--service',SERVICE,'--task-definition',arn,'--desired-count','1',*deployment_policy().aws_args())
  wait_healthy(arn)
  print('GAIA_RECOVERED',arn)
 if __name__=='__main__':main()

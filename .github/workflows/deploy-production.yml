@@ -80,6 +80,15 @@ jobs:
       ECS_EXECUTION_ROLE_NAME: ${{ vars.ECS_EXECUTION_ROLE_NAME }}
       ECS_HOST_SECURITY_GROUP_ID: ${{ vars.ECS_HOST_SECURITY_GROUP_ID }}
       ECS_SCHEMA_FAMILY: ${{ vars.ECS_SCHEMA_FAMILY }}
+      ECS_CPU_UNITS: ${{ vars.ECS_CPU_UNITS }}
+      ECS_MEMORY_RESERVATION: ${{ vars.ECS_MEMORY_RESERVATION }}
+      ECS_MEMORY_LIMIT: ${{ vars.ECS_MEMORY_LIMIT }}
+      ECS_SCHEMA_CPU_UNITS: ${{ vars.ECS_SCHEMA_CPU_UNITS }}
+      ECS_SCHEMA_MEMORY_RESERVATION: ${{ vars.ECS_SCHEMA_MEMORY_RESERVATION }}
+      ECS_SCHEMA_MEMORY_LIMIT: ${{ vars.ECS_SCHEMA_MEMORY_LIMIT }}
+      ECS_MIN_HEALTHY_PERCENT: ${{ vars.ECS_MIN_HEALTHY_PERCENT }}
+      ECS_MAX_PERCENT: ${{ vars.ECS_MAX_PERCENT }}
+      ECS_AZ_REBALANCING: ${{ vars.ECS_AZ_REBALANCING }}
       ECS_SERVICE_NAME: ${{ vars.ECS_SERVICE_NAME }}
       ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
       ECS_TASK_ROLE_NAME: ${{ vars.ECS_TASK_ROLE_NAME }}
@@ -99,6 +108,8 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+      - name: Validate ECS resource settings (no AWS changes)
+        run: python3 deploy/resources.py
       - name: Shared-platform read-only preflight
         run: python3 deploy/preflight.py
       - name: Verify DB app/migrator login and required privileges
