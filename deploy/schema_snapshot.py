@@ -4,9 +4,15 @@ from common import aws,fail,guard,CFG
 
 def main():
  guard()
- if os.getenv('MIGRATION_NEEDED')!='true':fail('No pending migrations; snapshot not requested')
- if os.getenv('MIGRATION_APPROVED')!='true':fail('Snapshot approval missing')
- label='gaia-before-migration-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S')
+ purpose=os.getenv('SCHEMA_SNAPSHOT_PURPOSE','migration')
+ if purpose=='migration':
+  if os.getenv('MIGRATION_NEEDED')!='true' or os.getenv('MIGRATION_APPROVED')!='true':fail('Pending migration and snapshot approval required')
+  prefix='gaia-before-migration-'
+ elif purpose=='baseline':
+  if os.getenv('GAIA_BASELINE_APPROVED')!='RECONCILE_GAIA_BASELINE':fail('Exact baseline approval required for snapshot')
+  prefix='gaia-before-migration-baseline-'
+ else:fail('Invalid schema snapshot purpose')
+ label=prefix+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S')
  aws('rds','create-db-snapshot','--db-instance-identifier',CFG['rdsIdentifier'],'--db-snapshot-identifier',label)
  deadline=time.monotonic()+3600
  while time.monotonic()<deadline:

@@ -1,0 +1,141 @@
+name: '03 · DB BASELINE / Gaia initial migration ledger (one-time)'
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type RECONCILE_GAIA_BASELINE after DBA schema and data review'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: gaia-production-release
+  cancel-in-progress: false
+jobs:
+  checks:
+    if: inputs.confirmation == 'RECONCILE_GAIA_BASELINE'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build && npm run build:deploy
+      - run: npm run test:migrations
+      - run: python3 -m unittest discover -s test/deploy -p 'test_*.py'
+      - run: python3 -m compileall -q deploy
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.ref.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        id: image
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.name.outputs.image }}:sha-${{ github.sha }}
+          provenance: false
+      - id: ref
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "image_ref=ghcr.io/${GITHUB_REPOSITORY,,}@${DIGEST}" >> "$GITHUB_OUTPUT"
+  reconcile:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    environment: production
+    env:
+      APP_DEPLOY_ROLE_NAME: ${{ vars.APP_DEPLOY_ROLE_NAME }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      CLOUDWATCH_ALARM_PREFIX: ${{ vars.CLOUDWATCH_ALARM_PREFIX }}
+      CLOUDWATCH_LOG_GROUP: ${{ vars.CLOUDWATCH_LOG_GROUP }}
+      DB_APP_PASSWORD_SECRET_ARN: ${{ vars.DB_APP_PASSWORD_SECRET_ARN }}
+      DB_APP_USER: ${{ vars.DB_APP_USER }}
+      DB_HOST: ${{ vars.DB_HOST }}
+      DB_MIGRATION_PASSWORD_SECRET_ARN: ${{ vars.DB_MIGRATION_PASSWORD_SECRET_ARN }}
+      DB_MIGRATOR_USER: ${{ vars.DB_MIGRATOR_USER }}
+      DB_NAME: ${{ vars.DB_NAME }}
+      ECS_CLUSTER_NAME: ${{ vars.ECS_CLUSTER_NAME }}
+      ECS_CONTAINER_NAME: ${{ vars.ECS_CONTAINER_NAME }}
+      ECS_EXECUTION_ROLE_NAME: ${{ vars.ECS_EXECUTION_ROLE_NAME }}
+      ECS_HOST_SECURITY_GROUP_ID: ${{ vars.ECS_HOST_SECURITY_GROUP_ID }}
+      ECS_SCHEMA_FAMILY: ${{ vars.ECS_SCHEMA_FAMILY }}
+      ECS_SERVICE_NAME: ${{ vars.ECS_SERVICE_NAME }}
+      ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
+      ECS_TASK_ROLE_NAME: ${{ vars.ECS_TASK_ROLE_NAME }}
+      GHCR_SECRET_ARN: ${{ vars.GHCR_SECRET_ARN }}
+      INFRA_ROLE_NAME: ${{ vars.INFRA_ROLE_NAME }}
+      JWT_SECRET_ARN: ${{ vars.JWT_SECRET_ARN }}
+      RDS_INSTANCE_IDENTIFIER: ${{ vars.RDS_INSTANCE_IDENTIFIER }}
+      RDS_SECURITY_GROUP_ID: ${{ vars.RDS_SECURITY_GROUP_ID }}
+      IMAGE_REF: ${{ needs.build.outputs.image_ref }}
+      PUBLIC_INGRESS_ENABLED: 'false'
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Read-only shared-platform preflight
+        run: python3 deploy/preflight.py
+      - name: Verify existing app and migrator DB rights
+        run: |
+          SCHEMA_ACTION=verify-app python3 deploy/schema_task.py
+          SCHEMA_ACTION=verify-migrator python3 deploy/schema_task.py
+      - name: Check exact 001-003 Gaia schema (read-only)
+        run: SCHEMA_ACTION=baseline-check python3 deploy/schema_task.py
+      - name: Snapshot entire shared RDS instance before ledger reconciliation
+        id: snapshot
+        env:
+          SCHEMA_SNAPSHOT_PURPOSE: baseline
+          GAIA_BASELINE_APPROVED: ${{ inputs.confirmation }}
+        run: python3 deploy/schema_snapshot.py
+      - name: Record approved initial migration ledger (no app SQL replay)
+        env:
+          SCHEMA_ACTION: baseline
+          SCHEMA_AUTO_APPROVED: 'true'
+          GAIA_BASELINE_APPROVED: ${{ inputs.confirmation }}
+          MIGRATION_SNAPSHOT_ID: ${{ steps.snapshot.outputs.snapshot_id }}
+        run: python3 deploy/schema_task.py
+      - name: Verify no migration pending after historical baseline
+        run: |
+          set +e
+          SCHEMA_ACTION=plan python3 deploy/schema_task.py
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "Gaia migration plan not current after baseline (exit=$rc); investigate before release"
+            exit 1
+          fi
+      - name: Verify application privileges again
+        run: SCHEMA_ACTION=post-app python3 deploy/schema_task.py
+      - name: Summary
+        env:
+          SNAPSHOT_ID: ${{ steps.snapshot.outputs.snapshot_id }}
+        run: |
+          echo "Gaia baseline ledger reconciled; snapshot: $SNAPSHOT_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo 'No Gaia tables dropped, no application SQL replayed, no ECS service changes.' >> "$GITHUB_STEP_SUMMARY"

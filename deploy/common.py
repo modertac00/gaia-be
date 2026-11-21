@@ -56,6 +56,9 @@ def container(image_ref,command,user,secret_arn,kind):
        'DB_VERIFICATION_ROLE':'app' if user==APP_USER else 'migrator',
        'DB_VERIFICATION_STAGE':os.getenv('DB_VERIFICATION_STAGE','pre'),
        'JWT_EXPIRES_IN':os.getenv('JWT_EXPIRES_IN','1d'),'CORS_ALLOWED_ORIGINS':os.getenv('CORS_ALLOWED_ORIGINS','')}
+    if not is_app and os.getenv('GAIA_BASELINE_ACTION') in ('check','apply'):
+      env['GAIA_BASELINE_ACTION']=os.environ['GAIA_BASELINE_ACTION']
+      if os.getenv('GAIA_BASELINE_ACTION')=='apply':env['GAIA_BASELINE_APPROVED']=os.getenv('GAIA_BASELINE_APPROVED','')
     secrets=[{'name':'DB_PASSWORD','valueFrom':secret_arn}]
     if is_app:secrets.append({'name':'JWT_SECRET','valueFrom':secret('jwt-secret')})
     d={'name':CONTAINER if is_app else 'gaia-schema-job','image':image_ref,'essential':True,'cpu':256,'memoryReservation':256,'memory':512,

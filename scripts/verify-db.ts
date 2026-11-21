@@ -20,6 +20,11 @@ async function main(){
     const grants=await pool.query(`SELECT has_table_privilege(current_user,'public.app_users','SELECT') AS r,
       has_table_privilege(current_user,'public.app_users','INSERT') AS w`)
     if(!grants.rows[0].r||!grants.rows[0].w)throw Error('Gaia app lacks DML grants')
+    const ledger=await pool.query(`SELECT to_regclass('public.schema_migrations') AS tbl`)
+    if(ledger.rows[0].tbl){
+     const access=await pool.query(`SELECT has_table_privilege(current_user,'public.schema_migrations','SELECT') AS can_read`)
+     if(!access.rows[0].can_read)throw Error('Gaia app cannot read migration ledger')
+    }
    }
   }
   console.log(JSON.stringify({status:'pass',role,stage,database:v.database,username:v.username}))

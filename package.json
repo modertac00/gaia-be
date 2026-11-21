@@ -16,7 +16,8 @@
     "db:seed:compiled": "node dist-deploy/scripts/seed-init-data.js",
     "account:create:compiled": "node dist-deploy/scripts/create-account.js",
     "db:verify:compiled": "node dist-deploy/scripts/verify-db.js",
-    "db:plan:compiled": "node dist-deploy/scripts/check-migrations.js"
+    "db:plan:compiled": "node dist-deploy/scripts/check-migrations.js",
+    "test:migrations": "node --test test/migrations/*.test.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -23,7 +23,7 @@ No routing, SQS, RDS schema, IAM, GitHub OIDC, ECS cluster/network architecture,
 
 1. Apply these files to the actual `modertac00/gaia-be` deployment branch, review diff, commit, and push.
 2. Run the existing `02 · RELEASE / Gaia ECS` workflow with its current `DEPLOY` approval. It rebuilds the image by digest and registers a new task-definition revision.
-3. The existing database schema is already migrated; the migration ledger check should return current. The pipeline should **not** blindly recreate or reseed the database.
+3. The historical initial SQL migrations were run without a ledger. **Before** re-running release, use the separately approved baseline reconciliation described in `docs/GAIA_MIGRATION_RECOVERY.md`; otherwise the release planner will fail closed. Never replay or drop existing production tables.
 4. Verify `desiredCount=1`, `runningCount=1`, ECS `HEALTHY`, and steady state.
 5. If the new rollout still fails, inspect `GET /ready` response, PostgreSQL authorization, environment variables, and ECS events. Do not bypass readiness by replacing it with `/health`.
 
