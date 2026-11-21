@@ -1,6 +1,6 @@
 """Gaia-only private one-off database plan/verification/migration. No DB-admin credentials."""
 import os,time
-from common import aws,fail,register,task,container,image,secret,SCHEMA,CLUSTER,guard
+from common import aws,fail,register,task,container,image,secret,SCHEMA,CLUSTER,guard,CFG,APP_USER,MIGRATOR_USER
 MODES={'verify-app':['node','dist-deploy/scripts/verify-db.js'],'verify-migrator':['node','dist-deploy/scripts/verify-db.js'],
  'plan':['node','dist-deploy/scripts/check-migrations.js'],'migrate':['node','dist-deploy/scripts/migrate.js'],'post-app':['node','dist-deploy/scripts/verify-db.js'],
  'post-migrator':['node','dist-deploy/scripts/verify-db.js']}
@@ -11,9 +11,9 @@ def main():
   ident=os.getenv('MIGRATION_SNAPSHOT_ID','')
   if os.getenv('SCHEMA_AUTO_APPROVED')!='true' or not ident.startswith('gaia-before-migration-'):fail('Migration requires explicit approval and snapshot')
   snapshots=aws('rds','describe-db-snapshots','--db-snapshot-identifier',ident).get('DBSnapshots',[])
-  if len(snapshots)!=1 or snapshots[0].get('Status')!='available' or snapshots[0].get('DBInstanceIdentifier')!='moderta-prod-postgres':fail('Required snapshot not available')
+  if len(snapshots)!=1 or snapshots[0].get('Status')!='available' or snapshots[0].get('DBInstanceIdentifier')!=CFG['rdsIdentifier']:fail('Required snapshot not available')
  migrator=mode in ('verify-migrator','post-migrator','migrate')
- role='gaia_migrator' if migrator else 'gaia_app'
+ role=MIGRATOR_USER if migrator else APP_USER
  if mode in ('post-app','post-migrator'):os.environ['DB_VERIFICATION_STAGE']='post'
  d=container(image(),MODES[mode],role,secret('db-migrator-password' if migrator else 'db-app-password'),'schema')
  definition=register(task(SCHEMA,d))

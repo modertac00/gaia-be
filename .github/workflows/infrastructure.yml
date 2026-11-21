@@ -23,6 +23,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     environment: production-infrastructure
+    env:
+      APP_DEPLOY_ROLE_NAME: ${{ vars.APP_DEPLOY_ROLE_NAME }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      CLOUDWATCH_ALARM_PREFIX: ${{ vars.CLOUDWATCH_ALARM_PREFIX }}
+      CLOUDWATCH_LOG_GROUP: ${{ vars.CLOUDWATCH_LOG_GROUP }}
+      DB_APP_PASSWORD_SECRET_ARN: ${{ vars.DB_APP_PASSWORD_SECRET_ARN }}
+      DB_APP_USER: ${{ vars.DB_APP_USER }}
+      DB_HOST: ${{ vars.DB_HOST }}
+      DB_MIGRATION_PASSWORD_SECRET_ARN: ${{ vars.DB_MIGRATION_PASSWORD_SECRET_ARN }}
+      DB_MIGRATOR_USER: ${{ vars.DB_MIGRATOR_USER }}
+      DB_NAME: ${{ vars.DB_NAME }}
+      ECS_CLUSTER_NAME: ${{ vars.ECS_CLUSTER_NAME }}
+      ECS_CONTAINER_NAME: ${{ vars.ECS_CONTAINER_NAME }}
+      ECS_EXECUTION_ROLE_NAME: ${{ vars.ECS_EXECUTION_ROLE_NAME }}
+      ECS_HOST_SECURITY_GROUP_ID: ${{ vars.ECS_HOST_SECURITY_GROUP_ID }}
+      ECS_SCHEMA_FAMILY: ${{ vars.ECS_SCHEMA_FAMILY }}
+      ECS_SERVICE_NAME: ${{ vars.ECS_SERVICE_NAME }}
+      ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
+      ECS_TASK_ROLE_NAME: ${{ vars.ECS_TASK_ROLE_NAME }}
+      GHCR_SECRET_ARN: ${{ vars.GHCR_SECRET_ARN }}
+      INFRA_ROLE_NAME: ${{ vars.INFRA_ROLE_NAME }}
+      JWT_SECRET_ARN: ${{ vars.JWT_SECRET_ARN }}
+      RDS_INSTANCE_IDENTIFIER: ${{ vars.RDS_INSTANCE_IDENTIFIER }}
+      RDS_SECURITY_GROUP_ID: ${{ vars.RDS_SECURITY_GROUP_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,19 +58,31 @@ jobs:
       - name: CDK installation and tests
         working-directory: infra
         run: npm ci --no-audit --no-fund && npm test
+      - name: Check immutable GitHub OIDC identity before AWS authentication
+        env:
+          REPOSITORY: ${{ github.repository }}
+          OWNER_ID: ${{ github.repository_owner_id }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          IAM_ROLE_ARN: ${{ vars.AWS_INFRA_ROLE_ARN }}
+        run: |
+          test -n "$OWNER_ID" && test -n "$REPOSITORY_ID"
+          [[ "$OWNER_ID" =~ ^[0-9]+$ && "$REPOSITORY_ID" =~ ^[0-9]+$ ]]
+          echo "Expected sub: repo:${REPOSITORY%%/*}@${OWNER_ID}/${REPOSITORY#*/}@${REPOSITORY_ID}:environment:production-infrastructure"
+          test -n "$IAM_ROLE_ARN"
+          echo 'If AWS authentication retries, repair the existing bootstrap role using infra/scripts/bootstrap-cdk.sh with an administrative AWS profile.'
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_INFRA_ROLE_ARN }}
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
       - name: Existing account and cluster
         run: |
-          test "$(aws sts get-caller-identity --query Account --output text)" = 516900616370
-          test "$(aws ecs describe-clusters --clusters moderta-production-cluster --query 'clusters[0].status' --output text)" = ACTIVE
+          test "$(aws sts get-caller-identity --query Account --output text)" = "$AWS_ACCOUNT_ID"
+          test "$(aws ecs describe-clusters --clusters "$ECS_CLUSTER_NAME" --query 'clusters[0].status' --output text)" = ACTIVE
       - name: CDK Gaia foundation diff and optional deploy
         working-directory: infra
         env:
-          AWS_ACCOUNT_ID: '516900616370'
-          AWS_REGION: ap-south-1
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
           GAIA_STACK_SELECTION: foundation
           GAIA_GITHUB_REPOSITORY: ${{ github.repository }}
           GAIA_GITHUB_OWNER_ID: ${{ github.repository_owner_id }}

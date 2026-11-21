@@ -1,3 +1,7 @@
+> **OIDC bootstrap prerequisite:** If `configure-aws-credentials` repeatedly retries on the infrastructure job, follow [docs/OIDC_IMMUTABLE_SUBJECT_AND_BOOTSTRAP.md](docs/OIDC_IMMUTABLE_SUBJECT_AND_BOOTSTRAP.md). The GitHub workflow cannot repair its own role trust.
+
+> **Configuration update:** See [docs/FLEXIBLE_CONFIGURATION.md](docs/FLEXIBLE_CONFIGURATION.md). All infrastructure identifiers and exact Secrets Manager ARNs are now provided through protected GitHub environment variables, not embedded in the repository.
+
 # Gaia Backend — Moderta production architecture parity, Phase 1
 
 This package uses the same **CDK bootstrap/foundation**, immutable GHCR image, GitHub OIDC environments, private ECS EC2 bridge deployment, one-off DB role verification and migration tasks, pre-migration RDS snapshot, ECS circuit breaker and scoped recovery *pattern* as the supplied ESM Reporting, Mint AI Desk and Context Engine deployments.

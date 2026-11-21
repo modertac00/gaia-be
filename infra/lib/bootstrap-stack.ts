@@ -1,16 +1,18 @@
 import { Stack, StackProps, Duration, CfnOutput, aws_iam as iam } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-interface Props extends StackProps { infraSubject:string }
-const account='516900616370',region='ap-south-1';
-const stackArn=`arn:aws:cloudformation:${region}:${account}:stack/ModertaGaiaFoundationStack/*`;
-const assetBucket=`arn:aws:s3:::cdk-hnb659fds-assets-${account}-${region}`;
-const roleNames=['moderta-gaia-prod-app-deployer','moderta-gaia-prod-task-execution','moderta-gaia-prod-task-runtime'];
+import {GaiaConfig,str} from './config';
+interface Props extends StackProps { infraSubject:string;cfg:GaiaConfig }
+
 export class GaiaBootstrapStack extends Stack {
  constructor(scope: Construct,id: string,props: Props){
   super(scope,id,props);
+  const account=str(props.cfg,'account'),region=str(props.cfg,'region');
+  const stackArn=`arn:aws:cloudformation:${region}:${account}:stack/ModertaGaiaFoundationStack/*`;
+  const assetBucket=`arn:aws:s3:::cdk-hnb659fds-assets-${account}-${region}`;
+  const roleNames=['deployRoleName','executionRoleName','runtimeRoleName'].map(k=>str(props.cfg,k));
   const oidc=iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(this,'Oidc',`arn:aws:iam::${account}:oidc-provider/token.actions.githubusercontent.com`);
   const infra=new iam.Role(this,'InfrastructureRole',{
-   roleName:'moderta-gaia-prod-infra-deployer',maxSessionDuration:Duration.hours(1),
+   roleName:str(props.cfg,'infraRoleName'),maxSessionDuration:Duration.hours(1),
    assumedBy:new iam.WebIdentityPrincipal(oidc.openIdConnectProviderArn,{StringEquals:{
     'token.actions.githubusercontent.com:aud':'sts.amazonaws.com',
     'token.actions.githubusercontent.com:sub':props.infraSubject}})
@@ -26,7 +28,7 @@ export class GaiaBootstrapStack extends Stack {
   // The foundation workflow checks the pre-existing cluster before computing its CDK diff.
   // Read-only, scoped to the existing production cluster (no cluster mutation rights).
   add(['ecs:DescribeClusters'],
-      [`arn:aws:ecs:${region}:${account}:cluster/moderta-production-cluster`],
+      [`arn:aws:ecs:${region}:${account}:cluster/${str(props.cfg,'cluster')}`],
       'ExistingEcsClusterReadOnly');
   add(['s3:GetBucketLocation','s3:ListBucket'],[assetBucket],'CdkAssetsRead');
   add(['s3:GetObject','s3:PutObject','s3:AbortMultipartUpload'],[`${assetBucket}/*`],'CdkAssetsWrite');
@@ -36,15 +38,15 @@ export class GaiaBootstrapStack extends Stack {
       roleNames.map(n=>`arn:aws:iam::${account}:role/${n}`),'GaiaRolesOnly');
   infra.addToPolicy(new iam.PolicyStatement({sid:'ExecutionPolicyOnly',
     actions:['iam:AttachRolePolicy','iam:DetachRolePolicy'],
-    resources:[`arn:aws:iam::${account}:role/moderta-gaia-prod-task-execution`],
+    resources:[`arn:aws:iam::${account}:role/${str(props.cfg,'executionRoleName')}`],
     conditions:{ArnEquals:{'iam:PolicyARN':'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'}}}));
   add(['logs:DescribeLogGroups'],['*'],'LogGroupDiscovery');
   add(['logs:CreateLogGroup','logs:DeleteLogGroup','logs:PutRetentionPolicy','logs:DeleteRetentionPolicy',
        'logs:TagResource','logs:UntagResource','logs:ListTagsForResource'],[
-       `arn:aws:logs:${region}:${account}:log-group:/moderta/production/gaia-api`,
-       `arn:aws:logs:${region}:${account}:log-group:/moderta/production/gaia-api:*`],'GaiaLogsOnly');
+       `arn:aws:logs:${region}:${account}:log-group:${str(props.cfg,'logGroup')}`,
+       `arn:aws:logs:${region}:${account}:log-group:${str(props.cfg,'logGroup')}:*`],'GaiaLogsOnly');
   add(['cloudwatch:PutMetricAlarm','cloudwatch:DeleteAlarms','cloudwatch:DescribeAlarms'],[
-      `arn:aws:cloudwatch:${region}:${account}:alarm:moderta-gaia-*`],'GaiaAlarmsOnly');
+      `arn:aws:cloudwatch:${region}:${account}:alarm:${str(props.cfg,'alarmPrefix')}*`],'GaiaAlarmsOnly');
   new CfnOutput(this,'InfrastructureDeployerRoleArn',{value:infra.roleArn});
  }
 }

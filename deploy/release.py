@@ -1,6 +1,6 @@
 """Gaia ECS EC2 bridge rollout with digest, private-only initial deploy, ECS circuit breaker."""
 import os
-from common import aws,fail,guard,image,secret,register,task,container,service,wait_healthy,CLUSTER,SERVICE,FAMILY
+from common import aws,fail,guard,image,secret,register,task,container,service,wait_healthy,CLUSTER,SERVICE,FAMILY,APP_USER
 from preflight import main as preflight
 
 def main():
@@ -9,7 +9,7 @@ def main():
  preflight();ref=image()
  current=service()
  old=current.get('taskDefinition') if current else None
- d=container(ref,['node','dist/main.js'],'gaia_app',secret('db-app-password'),'api')
+ d=container(ref,['node','dist/main.js'],APP_USER,secret('db-app-password'),'api')
  revision=register(task(FAMILY,d))
  config='maximumPercent=200,minimumHealthyPercent=100,deploymentCircuitBreaker={enable=true,rollback=true}'
  if not current:

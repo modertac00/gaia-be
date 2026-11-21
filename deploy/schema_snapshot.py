@@ -1,13 +1,13 @@
 """Controlled shared-RDS snapshot only when pending Gaia migrations are confirmed."""
 import os,time,datetime
-from common import aws,fail,guard
+from common import aws,fail,guard,CFG
 
 def main():
  guard()
  if os.getenv('MIGRATION_NEEDED')!='true':fail('No pending migrations; snapshot not requested')
  if os.getenv('MIGRATION_APPROVED')!='true':fail('Snapshot approval missing')
  label='gaia-before-migration-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M%S')
- aws('rds','create-db-snapshot','--db-instance-identifier','moderta-prod-postgres','--db-snapshot-identifier',label)
+ aws('rds','create-db-snapshot','--db-instance-identifier',CFG['rdsIdentifier'],'--db-snapshot-identifier',label)
  deadline=time.monotonic()+3600
  while time.monotonic()<deadline:
   item=aws('rds','describe-db-snapshots','--db-snapshot-identifier',label)['DBSnapshots'][0]
