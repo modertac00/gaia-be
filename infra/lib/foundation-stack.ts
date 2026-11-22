@@ -28,7 +28,10 @@ export class GaiaFoundationStack extends Stack {
   add('ManageOnlyGaiaService',['ecs:CreateService','ecs:UpdateService','ecs:DescribeServices'],[serviceArn]);
   add('RunGaiaSchemaTasks',['ecs:RunTask'],families,{'ArnEquals':{'ecs:cluster':clusterArn}});
   add('ReadCluster',['ecs:DescribeClusters','ecs:ListContainerInstances'],[clusterArn]);
-  add('ListClusterTasks',['ecs:ListTasks'],[clusterArn]);
+  // ECS authorizes ListTasks against container-instance ARNs, not the cluster ARN.
+  // Scope read-only task discovery to instances in the existing Gaia ECS cluster.
+  add('ListClusterTasks',['ecs:ListTasks'],[`${ecs}:container-instance/${cluster}/*`],
+      {'ArnEquals':{'ecs:cluster':clusterArn}});
   add('ReadEcsTasks',['ecs:DescribeTasks'],[`${ecs}:task/${cluster}/*`]);
   add('ReadEcsInstances',['ecs:DescribeContainerInstances'],[`${ecs}:container-instance/${cluster}/*`]);
   add('TagGaiaOnly',['ecs:TagResource'],[...families,serviceArn]);
